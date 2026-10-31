@@ -3,3 +3,5 @@ minimumReleaseAge: 1440
 
 allowBuilds:
   lefthook: true
+catalog:
+  typescript: 7.0.2

@@ -1,3 +1,8 @@
+pre-push:
+  jobs:
+    - name: typecheck
+      run: pnpm tc
+
 commit-msg:
   jobs:
     - name: conventional-commit
