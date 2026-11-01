@@ -16,3 +16,6 @@ catalog:
 packages:
   - "apps/*"
   - "packages/*"
+permissions:
+  drizzle-kit:
+    skills: false
