@@ -1,5 +1,5 @@
 import { pool } from "../db";
-import { DEMO_PASSWORD, DEMO_USERS, seed } from "./seed";
+import { DEMO_PASSWORD, DEMO_USERS, describeSeedFailure, seed } from "./seed";
 
 try {
 	await seed();
@@ -8,6 +8,9 @@ try {
 	for (const { email } of DEMO_USERS) {
 		console.log(`  ${email} / ${DEMO_PASSWORD}`);
 	}
+} catch (error) {
+	console.error(`Couldn't seed the database: ${describeSeedFailure(error)}`);
+	process.exitCode = 1;
 } finally {
 	await pool.end();
 }

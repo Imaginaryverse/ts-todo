@@ -27,6 +27,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "catalog:",
+		"@types/pg": "catalog:",
 		"tsx": "4.23.15"
 	}
 }

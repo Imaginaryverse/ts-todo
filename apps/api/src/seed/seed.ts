@@ -1,5 +1,6 @@
 import { todos, users } from "@ts-todo/db/schema";
 import { inArray } from "drizzle-orm";
+import { Client } from "pg";
 
 import { auth } from "../auth";
 import { db } from "../db";
@@ -7,7 +8,13 @@ import { env } from "../env";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+// Failures people hit during setup, by the error code Postgres or Node gives them
+const SETUP_HINTS: Record<string, string> = {
+	ECONNREFUSED: "Can't reach Postgres. Is it running? Try `pnpm services:up`.",
+	"42P01": "The tables don't exist yet. Try `pnpm db:migrate`.",
+};
 
 interface DemoTodo {
 	title: string;
@@ -76,11 +83,13 @@ function toTodoRow(userId: string, todo: DemoTodo): typeof todos.$inferInsert {
 	};
 }
 
-/** Throws unless the URL points at this machine, because the seed creates users with a known password. */
+/**
+ * Throws unless the URL points at this machine, because the seed creates users with a known password.
+ * It checks the host and not `NODE_ENV`, which defaults to `development` when it isn't set.
+ */
 export function assertLocalDatabase(url: string) {
-	const { hostname, searchParams } = new URL(url);
-	// `pg` lets a `host` query parameter override the host in the URL
-	const host = searchParams.get("host") ?? hostname;
+	// Asks `pg` where it would connect, without connecting: parsing the URL here could disagree with it
+	const { host } = new Client({ connectionString: url });
 
 	if (!LOCAL_HOSTS.has(host)) {
 		throw new Error(
@@ -109,4 +118,16 @@ export async function seed() {
 		});
 		await db.insert(todos).values(demoTodos.map((todo) => toTodoRow(user.id, todo)));
 	}
+}
+
+/** Turns a failed seed into one line for the console, since the error itself can be 40 lines long. */
+export function describeSeedFailure(error: unknown) {
+	// Drizzle wraps database errors, with the original as the cause
+	const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error;
+	if (!(cause instanceof Error)) {
+		return String(cause);
+	}
+
+	const code = "code" in cause ? String(cause.code) : "";
+	return SETUP_HINTS[code] ?? cause.message;
 }
