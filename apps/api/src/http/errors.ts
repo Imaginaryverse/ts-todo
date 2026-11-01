@@ -1,8 +1,7 @@
 import type { ApiError, ApiErrorIssue, ErrorReason } from "@ts-todo/schemas";
+import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
-
-import type { AppContext } from "../types";
 
 export const STATUS_BY_REASON = {
 	BAD_REQUEST: 400,
@@ -49,7 +48,7 @@ export function toApiErrorIssues(error: z.ZodError): ApiErrorIssue[] {
  * are checked against the OpenAPI spec. Elsewhere, throw an `AppError` instead.
  */
 export function sendError<R extends ErrorReason>(
-	c: AppContext,
+	c: Context,
 	error: ApiError["error"] & { reason: R },
 ) {
 	return c.json({ error } satisfies ApiError, STATUS_BY_REASON[error.reason]);
