@@ -8,10 +8,10 @@ import { requestId } from "hono/request-id";
 import { version } from "../../package.json";
 import { auth } from "../auth";
 import { env } from "../env";
-import { errorHandler } from "../http/error-handler";
-import { notFoundHandler } from "../http/not-found-handler";
 import type { AppEnv } from "../types";
 import { createRouter } from "./create-router";
+import { errorHandler } from "./error-handler";
+import { notFoundHandler } from "./not-found-handler";
 
 type AppOpenAPI<S extends Schema = Schema, P extends string = "/"> = OpenAPIHono<AppEnv, S, P>;
 

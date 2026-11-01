@@ -7,7 +7,9 @@
 		".": "./src/index.ts"
 	},
 	"scripts": {
-		"tc": "tsc"
+		"tc": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"dependencies": {
 		"zod": "catalog:"

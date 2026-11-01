@@ -1,4 +1,4 @@
-import { sendError } from "../../http/errors";
+import { sendError } from "../../lib/errors";
 import type { AppRouteHandler } from "../../types";
 import type { GetHealthRoute } from "./health.routes";
 import { isDatabaseReachable } from "./health.service";

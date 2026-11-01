@@ -1,7 +1,7 @@
 import { createMiddleware } from "hono/factory";
 
 import { auth } from "../auth";
-import { AppError } from "../http/errors";
+import { AppError } from "../lib/errors";
 import type { AppEnvAuth } from "../types";
 
 /**

@@ -2,7 +2,7 @@ import type { RouteConfig } from "@hono/zod-openapi";
 import { ApiError, type ErrorReason } from "@ts-todo/schemas";
 import { z, type ZodType } from "zod";
 
-import { STATUS_BY_REASON } from "../http/errors";
+import { STATUS_BY_REASON } from "./errors";
 
 type ZodRequestBody = NonNullable<NonNullable<RouteConfig["request"]>["body"]>;
 type ZodResponseBody = RouteConfig["responses"][number];

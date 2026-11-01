@@ -2,7 +2,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import { describe, expect, it, vi } from "vitest";
 
-import { createApp } from "../lib/create-app";
+import { createApp } from "./create-app";
 import { AppError } from "./errors";
 
 const app = createApp();

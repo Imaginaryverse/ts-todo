@@ -8,6 +8,7 @@
 	"author": "Anton Bertilsson",
 	"type": "module",
 	"scripts": {
+		"dev": "pnpm --filter @ts-todo/api dev",
 		"services:up": "docker compose up --detach --wait",
 		"services:down": "docker compose down",
 		"services:reset": "docker compose down --volumes && docker compose up --detach --wait",

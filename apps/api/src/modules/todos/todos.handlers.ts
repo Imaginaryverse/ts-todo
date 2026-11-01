@@ -1,7 +1,7 @@
 import type { todos } from "@ts-todo/db/schema";
 import type { Todo } from "@ts-todo/schemas";
 
-import { sendError } from "../../http/errors";
+import { sendError } from "../../lib/errors";
 import type { AppRouteHandler } from "../../types";
 import type {
 	DeleteTodoRoute,

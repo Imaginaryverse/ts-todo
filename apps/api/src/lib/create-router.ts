@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 
-import { AppError, toApiErrorIssues } from "../http/errors";
 import type { AppEnv } from "../types";
+import { AppError, toApiErrorIssues } from "./errors";
 
 export function createRouter() {
 	return new OpenAPIHono<AppEnv>({
