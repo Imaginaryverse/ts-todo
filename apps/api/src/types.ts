@@ -2,11 +2,23 @@ import type { HttpBindings } from "@hono/node-server";
 import type { RouteConfig, RouteConfigToEnv, RouteHandler } from "@hono/zod-openapi";
 import type { Context, Env } from "hono";
 
+import type { AuthSession, AuthUser } from "./auth";
+
+interface Variables {
+	requestId: string;
+}
+
 /** The Hono environment every route and middleware shares. */
 export interface AppEnv extends Env {
 	Bindings: HttpBindings;
-	Variables: {
-		requestId: string;
+	Variables: Variables;
+}
+
+/** The environment of routes behind `requireAuth`: the signed-in user and session are available. */
+export interface AppEnvAuth extends AppEnv {
+	Variables: Variables & {
+		user: AuthUser;
+		session: AuthSession;
 	};
 }
 
