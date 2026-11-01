@@ -122,9 +122,8 @@ that depends on it, with no build step in between. Two changes to try (undo each
   `description: text("description")` to `details: text("description")`, then run `pnpm tc`.
   `apps/api` now fails in both `toTodoDto` and the queries in `todos.service.ts`.
 - **Change the API contract.** In `packages/schemas/src/todo.ts`, add `priority: z.number(),` to
-  `Todo`, then run `pnpm --filter @ts-todo/api tc`. `toTodoDto` no longer returns a valid `Todo`.
-  The filter is there because `pnpm tc` stops at the first package that fails, and here that's the
-  test data in `packages/schemas`.
+  `Todo`, then run `pnpm tc`. `toTodoDto` in `apps/api` no longer returns a valid `Todo`, and neither
+  does the test data in `packages/schemas`.
 
 ## Adding a feature
 

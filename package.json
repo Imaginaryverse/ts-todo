@@ -15,7 +15,7 @@
 		"db:generate": "pnpm --filter @ts-todo/db db:generate",
 		"db:migrate": "pnpm --filter @ts-todo/db db:migrate",
 		"db:studio": "pnpm --filter @ts-todo/db db:studio",
-		"tc": "tsc && pnpm --recursive --if-present tc",
+		"tc": "tsc && pnpm --recursive --if-present --no-bail --no-sort tc",
 		"lint": "oxlint --deny-warnings",
 		"lint:fix": "oxlint --fix",
 		"fmt": "oxfmt --check",
