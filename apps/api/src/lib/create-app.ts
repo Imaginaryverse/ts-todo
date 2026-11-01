@@ -6,6 +6,7 @@ import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
 
 import { version } from "../../package.json";
+import { auth } from "../auth";
 import { env } from "../env";
 import { errorHandler } from "../http/error-handler";
 import { notFoundHandler } from "../http/not-found-handler";
@@ -53,6 +54,9 @@ export function createApp() {
 			allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		}),
 	);
+
+	// Better Auth handles everything under /auth (sign up, sign in, sign out, session)
+	app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
 
 	if (env.NODE_ENV === "development") {
 		configureOpenAPI(app);

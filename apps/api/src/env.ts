@@ -5,6 +5,10 @@ const EnvSchema = z.object({
 	PORT: z.coerce.number().int().positive().default(3000),
 	// Normalized to a bare origin (no path or trailing slash) so it compares equal to the Origin header
 	APP_ORIGIN: z.url({ protocol: /^https?$/ }).transform((url) => new URL(url).origin),
+	// Signs session cookies
+	BETTER_AUTH_SECRET: z.string().min(32),
+	// The API's own public URL; Better Auth uses it for callback URLs and origin checks
+	BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }).default("http://localhost:3000"),
 	DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
 });
 
