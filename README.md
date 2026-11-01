@@ -80,12 +80,17 @@ In `apps/api/src/`, pieces the whole app shares sit at the top level: `app.ts`, 
 own routes; a module is a set of routes you write yourself. Each API feature lives in
 `apps/api/src/modules/<feature>/`:
 
-| File                    | Contents                                                      |
-| ----------------------- | ------------------------------------------------------------- |
-| `<feature>.routes.ts`   | Route definitions: path, method, request and response schemas |
-| `<feature>.handlers.ts` | What each route does                                          |
-| `<feature>.service.ts`  | Database access and other logic that doesn't know about HTTP  |
-| `<feature>.index.ts`    | The router that connects routes to handlers                   |
+| File                    | Contents                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `<feature>.routes.ts`   | Route definitions: path, method, request and response schemas                                                |
+| `<feature>.handlers.ts` | What each route does, plus a `to<Name>Dto` function that turns database rows into the shared response schema |
+| `<feature>.service.ts`  | Database access and other logic that doesn't know about HTTP                                                 |
+| `<feature>.index.ts`    | The router that connects routes to handlers                                                                  |
+
+Handlers build responses field by field with their `to<Name>Dto` function instead of returning
+database rows. Hono doesn't check responses against the schema at runtime, so this is what keeps
+internal columns like `userId` out of responses and turns `Date`s into the ISO strings the shared
+schemas expect.
 
 Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds the test
 setup, which runs API tests against a separate `ts_todo_test` database that's created and migrated
