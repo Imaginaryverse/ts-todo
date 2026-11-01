@@ -1,0 +1,28 @@
+{
+	"name": "@ts-todo/ui",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"tc": "tsc -b"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "5.105.0",
+		"hono": "catalog:",
+		"react": "19.3.1",
+		"react-dom": "19.3.1",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@tanstack/react-query-devtools": "5.105.0",
+		"@ts-todo/api": "workspace:*",
+		"@types/node": "catalog:",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@vitejs/plugin-react": "6.1.2",
+		"vite": "8.3.5"
+	}
+}

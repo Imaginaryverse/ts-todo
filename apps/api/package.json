@@ -21,7 +21,7 @@
 		"@ts-todo/schemas": "workspace:*",
 		"better-auth": "catalog:",
 		"drizzle-orm": "catalog:",
-		"hono": "4.13.14",
+		"hono": "catalog:",
 		"pg": "catalog:",
 		"zod": "catalog:"
 	},

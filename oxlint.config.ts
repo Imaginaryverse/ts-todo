@@ -12,6 +12,17 @@ export default defineConfig({
 	},
 	overrides: [
 		{
+			// A wrong dependency array type-checks fine but leaves the UI showing stale values
+			files: ["apps/ui/src/**"],
+			plugins: ["react"],
+			rules: {
+				"react/exhaustive-deps": "error",
+				"react/rules-of-hooks": "error",
+				// The modern JSX transform doesn't need `React` in scope
+				"react/react-in-jsx-scope": "off",
+			},
+		},
+		{
 			// Code that runs in the browser, or that the browser imports, must not pull in server code
 			files: ["packages/schemas/**", "apps/ui/src/**"],
 			rules: {

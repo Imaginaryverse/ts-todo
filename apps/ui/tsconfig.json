@@ -1,0 +1,5 @@
+{
+	// Editors and `tsc -b` read this; each referenced config covers part of the package
+	"files": [],
+	"references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+}

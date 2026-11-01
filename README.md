@@ -46,10 +46,12 @@ cp .env.example .env              # the defaults work for local development
 pnpm services:up                  # start Postgres in Docker
 pnpm db:migrate                   # create the tables
 pnpm db:seed                      # add demo users and todos
-pnpm dev                          # start the API on http://localhost:3000
+pnpm dev                          # start the API on http://localhost:3000 and the UI on http://localhost:5173
 ```
 
-Check that it's up with `curl http://localhost:3000/health`, or browse the API docs at
+Open <http://localhost:5173> to see the UI, which shows the API's status. In development, the button
+in the corner opens the React Query Devtools, where you can inspect every query and its state. You
+can also check the API with `curl http://localhost:3000/health`, or browse its docs at
 <http://localhost:3000/scalar>.
 
 The seed creates two demo users with their own todos: `alice@example.com` and `bob@example.com`,
@@ -77,6 +79,7 @@ source, so a change in one is picked up everywhere without a build step.
 ```text
 apps/
   api/          Hono API: routes, handlers, and the OpenAPI docs
+  ui/           React frontend: calls the API through a typed client
 packages/
   db/           Drizzle schema, migrations, and the database client
   schemas/      Zod schemas shared by the API and the frontend (the API contract)
@@ -112,6 +115,20 @@ instead of passing database rows straight through. Hono doesn't check responses 
 internal columns like `userId` out of responses and turns `Date`s into the ISO strings the shared
 schemas expect.
 
+In `apps/ui/src/`:
+
+| Path       | Contents                                              |
+| ---------- | ----------------------------------------------------- |
+| `main.tsx` | Starts React and provides the query client to the app |
+| `app.tsx`  | The root component                                    |
+| `env.ts`   | Validates environment variables when the app loads    |
+| `lib/`     | The typed API client and the query client             |
+| `queries/` | TanStack Query hooks, one file per API feature        |
+
+The UI gets its API types from `import type { AppType } from "@ts-todo/api/app"` in
+`lib/api-client.ts`. There's no code generation, and because it's a type-only import, no server code
+ends up in the browser bundle.
+
 Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds test helpers
 and setup. The setup runs API tests against a separate `ts_todo_test` database that's created and
 migrated automatically.
@@ -123,7 +140,7 @@ a package's own script doesn't start Postgres, so run `pnpm services:up` before 
 ## Seeing the types at work
 
 Packages share types straight from source, so a change in one package is a type error in the code
-that depends on it, with no build step in between. Two changes to try (undo each one afterwards):
+that depends on it, with no build step in between. Three changes to try (undo each one afterwards):
 
 - **Rename a database column's property.** In `packages/db/src/schema/todos.ts`, change
   `description: text("description")` to `details: text("description")`, then run `pnpm tc`.
@@ -133,10 +150,13 @@ that depends on it, with no build step in between. Two changes to try (undo each
 - **Change the API contract.** In `packages/schemas/src/todo.ts`, add `priority: z.number(),` to
   `Todo`, then run `pnpm tc`. `toTodoDto` in `apps/api` no longer returns a valid `Todo`, and neither
   does the test data in `packages/schemas`.
+- **Change a contract the UI uses.** In `packages/schemas/src/health.ts`, rename `status` to `state`,
+  then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
+  `apps/ui/src/app.tsx` no longer exists, so one change flags both sides before you run anything.
 
 ## Adding a feature
 
-The `todos` feature is a complete example of each step:
+The `todos` feature is a complete example of the API steps:
 
 1. **Table:** add `packages/db/src/schema/<feature>.ts`, using the shared columns in `columns.ts`,
    and export it from `schema/index.ts`. Run `pnpm db:generate`, then `pnpm db:migrate`.
@@ -149,6 +169,8 @@ The `todos` feature is a complete example of each step:
    `apps/api/test/helpers.ts`.
 6. **Demo data:** if people should see the feature right after setup, add it to
    `apps/api/src/seed/seed.ts`.
+7. **UI:** add hooks in `apps/ui/src/queries/<feature>.ts`, following `queries/health.ts`. Requests
+   made through `api` from `lib/api-client.ts` are typed by the routes you just mounted.
 
 ## Auth
 
