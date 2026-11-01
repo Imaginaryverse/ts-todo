@@ -38,3 +38,52 @@ pnpm install
 ```
 
 You'll also need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another Docker runtime) to run the database.
+
+## Running it
+
+```sh
+cp .env.example .env              # the defaults work for local development
+pnpm services:up                  # start Postgres in Docker
+pnpm db:migrate                   # create the tables
+pnpm --filter @ts-todo/api dev    # start the API on http://localhost:3000
+```
+
+Check that it's up with `curl http://localhost:3000/health`, or browse the API docs at
+<http://localhost:3000/scalar>.
+
+Other useful commands, all run from the repo root:
+
+| Command          | What it does                                         |
+| ---------------- | ---------------------------------------------------- |
+| `pnpm test`      | Run every test (starts Postgres if it isn't running) |
+| `pnpm tc`        | Type-check every package                             |
+| `pnpm lint`      | Lint with oxlint                                     |
+| `pnpm fmt:fix`   | Format with oxfmt                                    |
+| `pnpm db:studio` | Browse the database in Drizzle Studio                |
+
+## Project structure
+
+The repo is a pnpm workspace: `apps/` holds things you run, and `packages/` holds code they share.
+Packages import each other by name (`@ts-todo/schemas`) like any npm package, but straight from
+source, so a change in one is picked up everywhere without a build step.
+
+```text
+apps/
+  api/          Hono API: routes, handlers, and the OpenAPI docs
+packages/
+  db/           Drizzle schema, migrations, and the database client
+  schemas/      Zod schemas shared by the API and the frontend (the API contract)
+```
+
+Each API feature lives in `apps/api/src/modules/<feature>/`:
+
+| File                    | Contents                                                      |
+| ----------------------- | ------------------------------------------------------------- |
+| `<feature>.routes.ts`   | Route definitions: path, method, request and response schemas |
+| `<feature>.handlers.ts` | What each route does                                          |
+| `<feature>.service.ts`  | Database access and other logic that doesn't know about HTTP  |
+| `<feature>.index.ts`    | The router that connects routes to handlers                   |
+
+Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds the test
+setup, which runs API tests against a separate `ts_todo_test` database that's created and migrated
+automatically.

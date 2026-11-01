@@ -13,4 +13,5 @@ catalog:
   zod: 4.6.7
 
 packages:
+  - "apps/*"
   - "packages/*"
