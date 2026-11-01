@@ -93,21 +93,21 @@ In `apps/api/src/`, pieces the whole app shares sit at the top level:
 Auth isn't in `modules/` because Better Auth defines its own routes; a module is a set of routes you
 write yourself. Each API feature lives in `apps/api/src/modules/<feature>/`:
 
-| File                    | Contents                                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `<feature>.routes.ts`   | Route definitions: path, method, request and response schemas                                                |
-| `<feature>.handlers.ts` | What each route does, plus a `to<Name>Dto` function that turns database rows into the shared response schema |
-| `<feature>.service.ts`  | Database access and other logic that doesn't know about HTTP, if the feature needs any (`users` doesn't)     |
-| `<feature>.index.ts`    | The module's entry point: the router that connects routes to handlers, and the only file `app.ts` imports    |
+| File                    | Contents                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `<feature>.routes.ts`   | Route definitions: path, method, request and response schemas                                                      |
+| `<feature>.handlers.ts` | What each route does, plus a `to<Name>Dto` function when it returns stored data, to fit the shared response schema |
+| `<feature>.service.ts`  | Database access and other logic that doesn't know about HTTP, if the feature needs any (`users` doesn't)           |
+| `<feature>.index.ts`    | The module's entry point: the router that connects routes to handlers, and the only file `app.ts` imports          |
 
-Handlers build responses field by field with their `to<Name>Dto` function instead of returning
-database rows. Hono doesn't check responses against the schema at runtime, so this is what keeps
+Handlers that return stored data build responses field by field with a `to<Name>Dto` function
+instead of passing database rows straight through. Hono doesn't check responses against the schema at runtime, so this is what keeps
 internal columns like `userId` out of responses and turns `Date`s into the ISO strings the shared
 schemas expect.
 
-Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds the test
-setup, which runs API tests against a separate `ts_todo_test` database that's created and migrated
-automatically.
+Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds test helpers
+and setup. The setup runs API tests against a separate `ts_todo_test` database that's created and
+migrated automatically.
 
 To test a single package, use `pnpm --filter @ts-todo/schemas test`. Unlike `pnpm test` at the root,
 a package's own script doesn't start Postgres, so run `pnpm services:up` before testing
@@ -120,7 +120,9 @@ that depends on it, with no build step in between. Two changes to try (undo each
 
 - **Rename a database column's property.** In `packages/db/src/schema/todos.ts`, change
   `description: text("description")` to `details: text("description")`, then run `pnpm tc`.
-  `apps/api` now fails in both `toTodoDto` and the queries in `todos.service.ts`.
+  `apps/api` now fails in `toTodoDto` and in the insert and update in `todos.service.ts`. The insert's
+  error is misleading: it names `userId`, because TypeScript reports the last overload it tried, but
+  the renamed property is the real cause.
 - **Change the API contract.** In `packages/schemas/src/todo.ts`, add `priority: z.number(),` to
   `Todo`, then run `pnpm tc`. `toTodoDto` in `apps/api` no longer returns a valid `Todo`, and neither
   does the test data in `packages/schemas`.

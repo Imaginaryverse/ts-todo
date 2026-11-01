@@ -33,8 +33,8 @@ async function createTodo(body: object, as = cookie) {
 	return Todo.parse(await res.json());
 }
 
-function patchTodo(id: string, body: object, as = cookie) {
-	return request("PATCH", `/todos/${id}`, { cookie: as, body });
+function patchTodo(id: string, body: object) {
+	return request("PATCH", `/todos/${id}`, { cookie, body });
 }
 
 describe("authentication", () => {
