@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 // Field rules shared by the response DTO and the input schemas
-export const TodoTitle = z.string().trim().min(1).max(100);
-export const TodoDescription = z.string().max(10_000);
+const TodoTitle = z.string().trim().min(1).max(100);
+const TodoDescription = z.string().max(10_000);
 
 export const Todo = z.object({
 	id: z.uuid(),

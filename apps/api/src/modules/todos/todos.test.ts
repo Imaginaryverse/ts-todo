@@ -1,8 +1,10 @@
 import { Todo } from "@ts-todo/schemas";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { cookieFrom, signedInCookie, signUp } from "../../../test/helpers";
+import { signedInCookie } from "../../../test/helpers";
 import app from "../../app";
+
+const OTHER_USER = { name: "Jane Doe", email: "jane@example.com" };
 
 let cookie: string;
 
@@ -31,9 +33,8 @@ async function createTodo(body: object, as = cookie) {
 	return Todo.parse(await res.json());
 }
 
-async function otherUserCookie() {
-	const res = await signUp({ name: "Jane Doe", email: "jane@example.com" });
-	return cookieFrom(res);
+function patchTodo(id: string, body: object, as = cookie) {
+	return request("PATCH", `/todos/${id}`, { cookie: as, body });
 }
 
 describe("authentication", () => {
@@ -77,13 +78,19 @@ describe("POST /todos", () => {
 		const body = (await res.json()) as { error: { issues: { path: unknown[] }[] } };
 		expect(body.error.issues.map((issue) => issue.path)).toEqual([["title"]]);
 	});
+
+	it("rejects a request with no body", async () => {
+		const res = await request("POST", "/todos", { cookie });
+
+		expect(res.status).toBe(400);
+	});
 });
 
 describe("GET /todos", () => {
 	it("lists only the user's own todos, newest first", async () => {
 		await createTodo({ title: "First" });
 		await createTodo({ title: "Second" });
-		await createTodo({ title: "Someone else's" }, await otherUserCookie());
+		await createTodo({ title: "Someone else's" }, await signedInCookie(OTHER_USER));
 
 		const res = await request("GET", "/todos", { cookie });
 
@@ -104,7 +111,7 @@ describe("GET /todos/:id", () => {
 	});
 
 	it("returns 404 for another user's todo, without revealing that it exists", async () => {
-		const todo = await createTodo({ title: "Buy milk" }, await otherUserCookie());
+		const todo = await createTodo({ title: "Buy milk" }, await signedInCookie(OTHER_USER));
 
 		const res = await request("GET", `/todos/${todo.id}`, { cookie });
 
@@ -122,10 +129,7 @@ describe("PATCH /todos/:id", () => {
 	it("updates only the fields that were sent", async () => {
 		const todo = await createTodo({ title: "Buy milk", description: "Semi-skimmed" });
 
-		const res = await request("PATCH", `/todos/${todo.id}`, {
-			cookie,
-			body: { title: "Buy oat milk" },
-		});
+		const res = await patchTodo(todo.id, { title: "Buy oat milk" });
 
 		expect(res.status).toBe(200);
 		expect(await res.json()).toMatchObject({ title: "Buy oat milk", description: "Semi-skimmed" });
@@ -134,10 +138,7 @@ describe("PATCH /todos/:id", () => {
 	it("clears the description with null", async () => {
 		const todo = await createTodo({ title: "Buy milk", description: "Semi-skimmed" });
 
-		const res = await request("PATCH", `/todos/${todo.id}`, {
-			cookie,
-			body: { description: null },
-		});
+		const res = await patchTodo(todo.id, { description: null });
 
 		expect(await res.json()).toMatchObject({ description: null });
 	});
@@ -145,16 +146,10 @@ describe("PATCH /todos/:id", () => {
 	it("sets completedAt when completed, and keeps it when completed again", async () => {
 		const todo = await createTodo({ title: "Buy milk" });
 
-		const first = Todo.parse(
-			await (
-				await request("PATCH", `/todos/${todo.id}`, { cookie, body: { completed: true } })
-			).json(),
-		);
-		const second = Todo.parse(
-			await (
-				await request("PATCH", `/todos/${todo.id}`, { cookie, body: { completed: true } })
-			).json(),
-		);
+		const firstRes = await patchTodo(todo.id, { completed: true });
+		const first = Todo.parse(await firstRes.json());
+		const secondRes = await patchTodo(todo.id, { completed: true });
+		const second = Todo.parse(await secondRes.json());
 
 		expect(first.completedAt).not.toBeNull();
 		expect(second.completedAt).toBe(first.completedAt);
@@ -162,21 +157,18 @@ describe("PATCH /todos/:id", () => {
 
 	it("clears completedAt when marked as not completed", async () => {
 		const todo = await createTodo({ title: "Buy milk" });
-		await request("PATCH", `/todos/${todo.id}`, { cookie, body: { completed: true } });
+		await patchTodo(todo.id, { completed: true });
 
-		const res = await request("PATCH", `/todos/${todo.id}`, { cookie, body: { completed: false } });
+		const res = await patchTodo(todo.id, { completed: false });
 
 		expect(await res.json()).toMatchObject({ completedAt: null });
 	});
 
 	it("returns 404 for another user's todo and leaves it unchanged", async () => {
-		const otherCookie = await otherUserCookie();
+		const otherCookie = await signedInCookie(OTHER_USER);
 		const todo = await createTodo({ title: "Buy milk" }, otherCookie);
 
-		const res = await request("PATCH", `/todos/${todo.id}`, {
-			cookie,
-			body: { title: "Hijacked" },
-		});
+		const res = await patchTodo(todo.id, { title: "Hijacked" });
 
 		expect(res.status).toBe(404);
 		const unchanged = await request("GET", `/todos/${todo.id}`, { cookie: otherCookie });
@@ -197,7 +189,7 @@ describe("DELETE /todos/:id", () => {
 	});
 
 	it("returns 404 for another user's todo and leaves it in place", async () => {
-		const otherCookie = await otherUserCookie();
+		const otherCookie = await signedInCookie(OTHER_USER);
 		const todo = await createTodo({ title: "Buy milk" }, otherCookie);
 
 		const res = await request("DELETE", `/todos/${todo.id}`, { cookie });

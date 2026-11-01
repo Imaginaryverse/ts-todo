@@ -1,6 +1,5 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
+import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
-import type { Schema } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
@@ -13,9 +12,7 @@ import { createRouter } from "./create-router";
 import { errorHandler } from "./error-handler";
 import { notFoundHandler } from "./not-found-handler";
 
-type AppOpenAPI<S extends Schema = Schema, P extends string = "/"> = OpenAPIHono<AppEnv, S, P>;
-
-function configureOpenAPI(app: AppOpenAPI) {
+function configureOpenAPI(app: OpenAPIHono<AppEnv>) {
 	// Visiting the server in a browser lands on the API docs.
 	app.get("/", (c) => c.redirect("/scalar"));
 

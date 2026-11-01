@@ -1,21 +1,17 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+
+import { id, timestamps } from "./columns";
 
 export const users = pgTable(
 	"users",
 	{
-		id: uuid("id")
-			.primaryKey()
-			.default(sql`uuidv7()`),
+		id,
 		email: text("email").notNull(),
 		name: text("name").notNull(),
 		emailVerified: boolean("email_verified").notNull().default(false),
 		image: text("image"),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow()
-			.$onUpdate(() => new Date()),
+		...timestamps,
 	},
 	(table) => [
 		uniqueIndex("users_email_unique").on(table.email),

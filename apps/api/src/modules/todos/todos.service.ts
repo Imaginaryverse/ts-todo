@@ -4,6 +4,11 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "../../db";
 
+// Every query for a single todo filters on this, so users can only reach their own
+function isOwnTodo(userId: string, todoId: string) {
+	return and(eq(todos.userId, userId), eq(todos.id, todoId));
+}
+
 export async function getTodoList(userId: string) {
 	const rows = await db
 		.select()
@@ -14,10 +19,7 @@ export async function getTodoList(userId: string) {
 }
 
 export async function getTodoDetail(userId: string, todoId: string) {
-	const [row] = await db
-		.select()
-		.from(todos)
-		.where(and(eq(todos.userId, userId), eq(todos.id, todoId)));
+	const [row] = await db.select().from(todos).where(isOwnTodo(userId, todoId));
 	return row;
 }
 
@@ -58,15 +60,12 @@ export async function updateTodo(userId: string, todoId: string, input: PatchTod
 			description: input.description === "" ? null : input.description,
 			completedAt: completedAtFor(input.completed),
 		})
-		.where(and(eq(todos.userId, userId), eq(todos.id, todoId)))
+		.where(isOwnTodo(userId, todoId))
 		.returning();
 	return updatedRow;
 }
 
 export async function deleteTodo(userId: string, todoId: string) {
-	const [deletedRow] = await db
-		.delete(todos)
-		.where(and(eq(todos.userId, userId), eq(todos.id, todoId)))
-		.returning();
+	const [deletedRow] = await db.delete(todos).where(isOwnTodo(userId, todoId)).returning();
 	return deletedRow;
 }

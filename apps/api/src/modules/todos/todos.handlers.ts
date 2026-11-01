@@ -1,5 +1,6 @@
 import type { todos } from "@ts-todo/db/schema";
 import type { Todo } from "@ts-todo/schemas";
+import type { Context } from "hono";
 
 import { sendError } from "../../lib/errors";
 import type { AppRouteHandler } from "../../types";
@@ -26,32 +27,36 @@ function toTodoDto(row: TodoRow): Todo {
 	};
 }
 
+function sendTodoNotFound(c: Context) {
+	return sendError(c, { reason: "NOT_FOUND", message: "Could not find todo" });
+}
+
 export const getTodoListHandler: AppRouteHandler<GetTodoListRoute> = async (c) => {
 	const user = c.get("user");
 
-	const todos = await getTodoList(user.id);
-	return c.json(todos.map(toTodoDto), 200);
+	const rows = await getTodoList(user.id);
+	return c.json(rows.map(toTodoDto), 200);
 };
 
 export const getTodoDetailHandler: AppRouteHandler<GetTodoDetailRoute> = async (c) => {
 	const user = c.get("user");
 	const params = c.req.valid("param");
 
-	const todo = await getTodoDetail(user.id, params.id);
+	const row = await getTodoDetail(user.id, params.id);
 
-	if (!todo) {
-		return sendError(c, { reason: "NOT_FOUND", message: "Could not find todo" });
+	if (!row) {
+		return sendTodoNotFound(c);
 	}
 
-	return c.json(toTodoDto(todo), 200);
+	return c.json(toTodoDto(row), 200);
 };
 
 export const postTodoHandler: AppRouteHandler<PostTodoRoute> = async (c) => {
 	const user = c.get("user");
 	const input = c.req.valid("json");
 
-	const todo = await createTodo(user.id, input);
-	return c.json(toTodoDto(todo), 201);
+	const row = await createTodo(user.id, input);
+	return c.json(toTodoDto(row), 201);
 };
 
 export const patchTodoHandler: AppRouteHandler<PatchTodoRoute> = async (c) => {
@@ -59,23 +64,23 @@ export const patchTodoHandler: AppRouteHandler<PatchTodoRoute> = async (c) => {
 	const params = c.req.valid("param");
 	const input = c.req.valid("json");
 
-	const todo = await updateTodo(user.id, params.id, input);
+	const row = await updateTodo(user.id, params.id, input);
 
-	if (!todo) {
-		return sendError(c, { reason: "NOT_FOUND", message: "Could not find todo" });
+	if (!row) {
+		return sendTodoNotFound(c);
 	}
 
-	return c.json(toTodoDto(todo), 200);
+	return c.json(toTodoDto(row), 200);
 };
 
 export const deleteTodoHandler: AppRouteHandler<DeleteTodoRoute> = async (c) => {
 	const user = c.get("user");
 	const params = c.req.valid("param");
 
-	const todo = await deleteTodo(user.id, params.id);
+	const row = await deleteTodo(user.id, params.id);
 
-	if (!todo) {
-		return sendError(c, { reason: "NOT_FOUND", message: "Could not find todo" });
+	if (!row) {
+		return sendTodoNotFound(c);
 	}
 
 	return c.body(null, 204);

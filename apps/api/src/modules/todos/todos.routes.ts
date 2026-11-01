@@ -46,7 +46,7 @@ export const postTodoRoute = createRoute({
 	tags,
 	middleware: requireAuth,
 	request: {
-		body: jsonRequestBody(PostTodoInput, "The todo to create", { required: true }),
+		body: jsonRequestBody(PostTodoInput, "The todo to create"),
 	},
 	responses: {
 		201: jsonResponseBody(Todo, "The new todo"),
@@ -63,7 +63,7 @@ export const patchTodoRoute = createRoute({
 	middleware: requireAuth,
 	request: {
 		params: TodoIdParams,
-		body: jsonRequestBody(PatchTodoInput, "The todo fields to patch", { required: true }),
+		body: jsonRequestBody(PatchTodoInput, "The todo fields to patch"),
 	},
 	responses: {
 		200: jsonResponseBody(Todo, "The updated todo"),

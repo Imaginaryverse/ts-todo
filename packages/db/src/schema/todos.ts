@@ -1,25 +1,20 @@
 import { sql } from "drizzle-orm";
 import { check, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
+import { id, timestamps } from "./columns";
 import { users } from "./users";
 
 export const todos = pgTable(
 	"todos",
 	{
-		id: uuid("id")
-			.primaryKey()
-			.default(sql`uuidv7()`),
+		id,
 		userId: uuid("user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
 		title: text("title").notNull(),
 		description: text("description"),
 		completedAt: timestamp("completed_at", { withTimezone: true }),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow()
-			.$onUpdate(() => new Date()),
+		...timestamps,
 	},
 	(table) => [
 		// Serves "this user's todos, newest first"; also covers lookups by user_id alone

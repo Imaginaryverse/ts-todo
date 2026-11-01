@@ -45,9 +45,9 @@ export function cookieFrom(res: Response) {
 		.join("; ");
 }
 
-/** Signs up `TEST_USER` and returns their session cookie. */
-export async function signedInCookie() {
-	const res = await signUp();
+/** Signs up `TEST_USER`, or whoever the overrides describe, and returns their session cookie. */
+export async function signedInCookie(overrides: Partial<Credentials> = {}) {
+	const res = await signUp(overrides);
 	if (!res.ok) {
 		throw new Error(`Sign-up failed with status ${res.status}`);
 	}

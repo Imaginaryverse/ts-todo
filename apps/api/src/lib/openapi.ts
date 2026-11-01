@@ -8,17 +8,13 @@ type ZodRequestBody = NonNullable<NonNullable<RouteConfig["request"]>["body"]>;
 type ZodResponseBody = RouteConfig["responses"][number];
 
 /**
- * Define the request body shape.
+ * Define the request body shape. It's always `required`: otherwise a request with no body skips
+ * validation, and the handler gets `{}` instead of the type it expects.
  * @param schema The request body schema
  * @param description A description of the request body
- * @param opts Request body options (e.g., `required: true`)
  * @returns A request body definition
  */
-export function jsonRequestBody<T extends ZodType>(
-	schema: T,
-	description: string,
-	opts?: { required?: boolean },
-) {
+export function jsonRequestBody<T extends ZodType>(schema: T, description: string) {
 	return {
 		content: {
 			"application/json": {
@@ -26,7 +22,7 @@ export function jsonRequestBody<T extends ZodType>(
 			},
 		},
 		description,
-		required: opts?.required,
+		required: true,
 	} satisfies ZodRequestBody;
 }
 

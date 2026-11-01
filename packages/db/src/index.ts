@@ -16,8 +16,6 @@ export function createDb(connectionString: string) {
 	return { db, pool };
 }
 
-export type Db = ReturnType<typeof createDb>["db"];
-
 /** Applies any pending migrations from this package's `migrations` folder. */
 export async function migrate(connectionString: string) {
 	const { db, pool } = createDb(connectionString);
