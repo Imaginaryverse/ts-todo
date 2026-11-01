@@ -14,6 +14,7 @@
 		"services:reset": "docker compose down --volumes && docker compose up --detach --wait",
 		"db:generate": "pnpm --filter @ts-todo/db db:generate",
 		"db:migrate": "pnpm --filter @ts-todo/db db:migrate",
+		"db:seed": "pnpm --filter @ts-todo/api db:seed",
 		"db:studio": "pnpm --filter @ts-todo/db db:studio",
 		"tc": "tsc && pnpm --recursive --if-present --no-bail --no-sort tc",
 		"lint": "oxlint --deny-warnings",

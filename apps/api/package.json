@@ -7,6 +7,7 @@
 		"./app": "./src/app.ts"
 	},
 	"scripts": {
+		"db:seed": "tsx --env-file-if-exists=../../.env src/seed/run.ts",
 		"dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
 		"tc": "tsc",
 		"test": "vitest run",

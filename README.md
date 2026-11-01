@@ -45,11 +45,16 @@ You'll also need [Docker Desktop](https://www.docker.com/products/docker-desktop
 cp .env.example .env              # the defaults work for local development
 pnpm services:up                  # start Postgres in Docker
 pnpm db:migrate                   # create the tables
+pnpm db:seed                      # add demo users and todos
 pnpm dev                          # start the API on http://localhost:3000
 ```
 
 Check that it's up with `curl http://localhost:3000/health`, or browse the API docs at
 <http://localhost:3000/scalar>.
+
+The seed creates two demo users with their own todos: `alice@example.com` and `bob@example.com`,
+both with the password `demo-password`. Run `pnpm db:seed` again at any time to restore them; it
+leaves any other accounts alone, and it refuses to run against a database that isn't local.
 
 Other useful commands, all run from the repo root:
 
@@ -60,6 +65,7 @@ Other useful commands, all run from the repo root:
 | `pnpm lint`        | Lint with oxlint                                     |
 | `pnpm fmt:fix`     | Format with oxfmt                                    |
 | `pnpm db:generate` | Create a migration after changing the Drizzle schema |
+| `pnpm db:seed`     | Reset the demo users and their todos                 |
 | `pnpm db:studio`   | Browse the database in Drizzle Studio                |
 
 ## Project structure
@@ -88,6 +94,7 @@ In `apps/api/src/`, pieces the whole app shares sit at the top level:
 | `types.ts`    | Types for Hono's environment and for route handlers                  |
 | `lib/`        | Creating the app and routers, error handling, and OpenAPI helpers    |
 | `middleware/` | Middleware that routes opt in to, like `requireAuth`                 |
+| `seed/`       | The demo data behind `pnpm db:seed`, and the script that loads it    |
 | `modules/`    | One folder per API feature                                           |
 
 Auth isn't in `modules/` because Better Auth defines its own routes; a module is a set of routes you
@@ -140,6 +147,8 @@ The `todos` feature is a complete example of each step:
 4. **Mount:** add the router to the `.route(...)` chain in `apps/api/src/app.ts`.
 5. **Tests:** add `<feature>.test.ts` next to the module, using the helpers in
    `apps/api/test/helpers.ts`.
+6. **Demo data:** if people should see the feature right after setup, add it to
+   `apps/api/src/seed/seed.ts`.
 
 ## Auth
 
