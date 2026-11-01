@@ -22,6 +22,9 @@ describe("GET /users/me", () => {
 		const res = await getMe("better-auth.session_token=not-a-real-token");
 
 		expect(res.status).toBe(401);
+		expect(await res.json()).toEqual({
+			error: { reason: "UNAUTHORIZED", message: "Authentication required" },
+		});
 	});
 
 	it("returns exactly the fields of the shared User schema", async () => {

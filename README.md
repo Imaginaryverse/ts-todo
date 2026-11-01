@@ -75,7 +75,10 @@ packages/
   schemas/      Zod schemas shared by the API and the frontend (the API contract)
 ```
 
-Each API feature lives in `apps/api/src/modules/<feature>/`:
+In `apps/api/src/`, pieces the whole app shares sit at the top level: `app.ts`, `auth.ts`, `db.ts`,
+`env.ts` and `middleware/`. Auth lives there and not in `modules/` because Better Auth defines its
+own routes; a module is a set of routes you write yourself. Each API feature lives in
+`apps/api/src/modules/<feature>/`:
 
 | File                    | Contents                                                      |
 | ----------------------- | ------------------------------------------------------------- |

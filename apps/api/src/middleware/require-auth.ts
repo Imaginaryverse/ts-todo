@@ -9,6 +9,8 @@ import type { AppEnvAuth } from "../types";
  * so the handler can read `c.get("user")` and `c.get("session")`.
  */
 export const requireAuth = createMiddleware<AppEnvAuth>(async (c, next) => {
+	// This can extend the session in the database, but the refreshed cookie isn't sent from here.
+	// Clients keep their cookie fresh by calling Better Auth's /auth/get-session, as its client does.
 	const result = await auth.api.getSession({ headers: c.req.raw.headers });
 
 	if (!result) {
