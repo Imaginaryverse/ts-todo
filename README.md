@@ -87,3 +87,20 @@ Each API feature lives in `apps/api/src/modules/<feature>/`:
 Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds the test
 setup, which runs API tests against a separate `ts_todo_test` database that's created and migrated
 automatically.
+
+## Auth
+
+Sign-up, sign-in and sessions are handled by [Better Auth](https://www.better-auth.com/), which
+owns every route under `/auth` (for example `POST /auth/sign-up/email` and
+`POST /auth/sign-in/email`). In development, the API docs at <http://localhost:3000/scalar> have an
+"Auth" source where you can try them; signing up there also signs you in for `GET /users/me`.
+
+Things to know:
+
+- **Protected routes** add `middleware: requireAuth` to their `createRoute` config. Their handlers
+  can then read the signed-in user with `c.get("user")`, fully typed.
+- **Errors from `/auth/*` use Better Auth's format** (`{ code, message }`), not the `ApiError`
+  shape the rest of the API uses. Better Auth's client handles its own format.
+- **Users are always created through Better Auth**, never with raw database inserts: passwords are
+  hashed and stored on `accounts` in Better Auth's format. Tests use the helpers in
+  `apps/api/test/helpers.ts`.

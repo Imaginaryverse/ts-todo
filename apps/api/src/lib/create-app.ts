@@ -27,7 +27,11 @@ function configureOpenAPI(app: AppOpenAPI) {
 	app.get(
 		"/scalar",
 		Scalar({
-			url: "/doc",
+			sources: [
+				{ url: "/doc", title: "API" },
+				// Served by Better Auth's openAPI plugin, which is only enabled in development
+				{ url: "/auth/open-api/generate-schema", title: "Auth" },
+			],
 			theme: "purple",
 			defaultHttpClient: {
 				targetKey: "js",
