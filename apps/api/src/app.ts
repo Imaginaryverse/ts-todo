@@ -1,9 +1,13 @@
 import { createApp } from "./lib/create-app";
 import { healthRouter } from "./modules/health/health.index";
+import { todosRouter } from "./modules/todos/todos.index";
 import { usersRouter } from "./modules/users/users.index";
 
 // Routes are chained so `AppType` carries their types for the RPC client.
-const app = createApp().route("/health", healthRouter).route("/users", usersRouter);
+const app = createApp()
+	.route("/health", healthRouter)
+	.route("/users", usersRouter)
+	.route("/todos", todosRouter);
 
 export default app;
 
