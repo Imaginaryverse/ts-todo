@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "../env";
 import { createApp } from "./create-app";
+import { createRouter } from "./create-router";
 import { AppError } from "./errors";
 import { jsonResponseBody, jsonResponseError, noContentResponse } from "./openapi";
 
@@ -55,6 +56,17 @@ const app = createApp()
 		() => {
 			throw new AppError("NOT_FOUND", "Matches the declared error");
 		},
+	)
+	.route(
+		"/mounted",
+		createRouter().openapi(
+			createRoute({
+				method: "get",
+				path: "/invalid",
+				responses: { 200: jsonResponseBody(Thing, "A thing") },
+			}),
+			(c) => c.json({ id: "not-a-uuid" }, 200),
+		),
 	);
 
 afterEach(() => {
@@ -78,6 +90,16 @@ describe("checkResponse", () => {
 		expect(res.status).toBe(500);
 		expect(await res.json()).toMatchObject({
 			error: { reason: "INTERNAL_SERVER_ERROR", issues: [{ path: ["id"] }] },
+		});
+	});
+
+	it("names the full path of a route mounted on a router", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		const res = await app.request("/mounted/invalid");
+
+		expect(await res.json()).toMatchObject({
+			error: { message: "Response doesn't match the 200 schema of GET /mounted/invalid" },
 		});
 	});
 

@@ -34,7 +34,7 @@ export function checkResponse(route: RouteConfig) {
 		}
 
 		const issues = toApiErrorIssues(result.error);
-		const message = `Response doesn't match the ${c.res.status} schema of ${route.method.toUpperCase()} ${route.path}`;
+		const message = `Response doesn't match the ${c.res.status} schema of ${c.req.method} ${c.req.path}`;
 		if (env.NODE_ENV === "production") {
 			console.error({ requestId: c.get("requestId"), message, issues });
 			return;
