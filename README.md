@@ -207,3 +207,7 @@ Things to know:
 - **Users are always created through Better Auth**, never with raw database inserts: passwords are
   hashed and stored on `accounts` in Better Auth's format. Tests use the helpers in
   `apps/api/test/helpers.ts`.
+
+## License
+
+[MIT](LICENSE)

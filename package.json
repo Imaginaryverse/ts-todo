@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "A simple fullstack TypeScript monorepo example",
 	"keywords": [],
-	"license": "ISC",
+	"license": "MIT",
 	"author": "Anton Bertilsson",
 	"type": "module",
 	"scripts": {
