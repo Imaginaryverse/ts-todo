@@ -4,6 +4,13 @@ TS Todo is a small todo app for learning fullstack development with TypeScript.
 It uses Postgres for the database, Hono for the API, and React for the frontend,
 all in one pnpm monorepo.
 
+## Why this setup
+
+With TypeScript on both the backend and frontend, a change to the database or the API contract shows
+up as a type error in the code that depends on it, right away, with no client to regenerate. Forms and
+the API share one set of validation rules. [Why fullstack TypeScript?](docs/why-fullstack-typescript.md)
+explains why it's such a good way to build for the web, and how it compares to other backend languages.
+
 ## Prerequisites
 
 This project uses Node 24 (see `.nvmrc`). The easiest way to get it is fnm:
@@ -93,18 +100,18 @@ packages/
 
 In `apps/api/src/`, pieces the whole app shares sit at the top level:
 
-| Path          | Contents                                                             |
-| ------------- | -------------------------------------------------------------------- |
-| `app.ts`      | Mounts every module's router; the starting point for reading the API |
-| `server.ts`   | Starts the HTTP server and shuts it down cleanly                     |
-| `auth.ts`     | Better Auth setup                                                    |
-| `db.ts`       | The database client                                                  |
-| `env.ts`      | Validates environment variables at startup                           |
-| `types.ts`    | Types for Hono's environment and for route handlers                  |
-| `lib/`        | Creating the app and routers, error handling, and OpenAPI helpers    |
-| `middleware/` | Middleware that routes opt in to, like `requireAuth`                 |
-| `seed/`       | The demo data behind `pnpm db:seed`, and the script that loads it    |
-| `modules/`    | One folder per API feature                                           |
+| Path          | Contents                                                                              |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `app.ts`      | Mounts every module's router; the starting point for reading the API                  |
+| `server.ts`   | Starts the HTTP server and shuts it down cleanly                                      |
+| `auth.ts`     | Better Auth setup                                                                     |
+| `db.ts`       | The database client                                                                   |
+| `env.ts`      | Validates environment variables at startup                                            |
+| `types.ts`    | Types for Hono's environment and for route handlers                                   |
+| `lib/`        | Creating the app and routers, error handling, OpenAPI helpers, and the response check |
+| `middleware/` | Middleware that routes opt in to, like `requireAuth`                                  |
+| `seed/`       | The demo data behind `pnpm db:seed`, and the script that loads it                     |
+| `modules/`    | One folder per API feature                                                            |
 
 Auth isn't in `modules/` because Better Auth defines its own routes; a module is a set of routes you
 write yourself. Each API feature lives in `apps/api/src/modules/<feature>/`:
@@ -117,9 +124,12 @@ write yourself. Each API feature lives in `apps/api/src/modules/<feature>/`:
 | `<feature>.index.ts`    | The module's entry point: the router that connects routes to handlers, and the only file `app.ts` imports          |
 
 Handlers that return stored data build responses field by field with a `to<Name>Dto` function
-instead of passing database rows straight through. Hono doesn't check responses against the schema at runtime, so this is what keeps
-internal columns like `userId` out of responses and turns `Date`s into the ISO strings the shared
-schemas expect.
+instead of passing database rows straight through. This keeps internal columns like `userId` out of
+responses and turns `Date`s into the ISO strings the shared schemas expect.
+
+Hono doesn't check responses against their schemas, so `createRouter` adds `checkResponse` to every
+route. A response that doesn't match fails the request in development and tests, naming the field,
+and is logged in production.
 
 In `apps/ui/src/`:
 
@@ -131,7 +141,7 @@ In `apps/ui/src/`:
 | `components/`      | UI used by more than one route, or by the app shell                               |
 | `routeTree.gen.ts` | Generated from `routes/` by the router plugin; don't edit it                      |
 | `env.ts`           | Validates environment variables when the app loads                                |
-| `lib/`             | The typed API client, the auth client, and small request helpers                  |
+| `lib/`             | The typed API client, the auth client, response validation, and request helpers   |
 | `queries/`         | TanStack Query hooks, one file per API feature                                    |
 
 Imports point in one direction: `routes` → `components` → `queries` → `lib`. A component that needs
@@ -140,6 +150,10 @@ users and todos imports from both `queries/` files, with nothing to work around.
 The UI gets its API types from `import type { AppType } from "@ts-todo/api/app"` in
 `lib/api-client.ts`. There's no code generation, and because it's a type-only import, no server code
 ends up in the browser bundle.
+
+Types disappear at runtime, so queries also check what the API actually sent with
+`parseResponseWith(Todo, api.todos[":id"].$get(...))`. If a response doesn't match, the user sees a
+clear error. The schema's type has to match the route's, so pairing the wrong two doesn't compile.
 
 Tests sit next to the code they test (`health.test.ts`). `apps/api/test/` only holds test helpers
 and setup. The setup runs API tests against a separate `ts_todo_test` database that's created and
@@ -152,23 +166,28 @@ a package's own script doesn't start Postgres, so run `pnpm services:up` before 
 ## Seeing the types at work
 
 Packages share types straight from source, so a change in one package is a type error in the code
-that depends on it, with no build step in between. Four changes to try (undo each one afterwards):
+that depends on it, with no build step in between. Five changes to try (undo each one afterwards):
 
 - **Rename a database column's property.** In `packages/db/src/schema/todos.ts`, change
   `description: text("description")` to `details: text("description")`, then run `pnpm tc`.
-  `apps/api` now fails in `toTodoDto` and in the insert and update in `todos.service.ts`. The insert's
+  `apps/api` now fails in `toTodoDto`, in the insert and update in `todos.service.ts`, and in
+  `seed.ts`. The insert's
   error is misleading: it names `userId`, because TypeScript reports the last overload it tried, but
   the renamed property is the real cause.
 - **Change the API contract.** In `packages/schemas/src/todo.ts`, add `priority: z.number(),` to
   `Todo`, then run `pnpm tc`. `toTodoDto` in `apps/api` no longer returns a valid `Todo`, and neither
-  does the test data in `packages/schemas`.
+  does the test data in `packages/schemas` and `apps/ui`.
 - **Change a contract the UI uses.** In `packages/schemas/src/health.ts`, rename `status` to `state`,
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
   `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before
   you run anything.
 - **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TITLE_MAX_LENGTH` to
   `10`. There's no type error this time, because it's a runtime rule. Instead, the new-todo form and
-  the API now both reject an 11-character title, with the same message.
+  the API now both reject an 11-character title, with the same message. Todos with longer titles
+  still load, because the limit only applies to input.
+- **Break a response at runtime.** In `toTodoDto` in `apps/api`, change `id: row.id` to
+  `id: "not-a-uuid"`, then run `pnpm tc`. It passes, because to TypeScript a UUID is only a string.
+  Now run `pnpm test`: the API's tests fail with `Response doesn't match the 201 schema of POST /todos`.
 
 ## Adding a feature
 
@@ -177,15 +196,17 @@ The `todos` feature is a complete example of each step:
 1. **Table:** add `packages/db/src/schema/<feature>.ts`, using the shared columns in `columns.ts`,
    and export it from `schema/index.ts`. Run `pnpm db:generate`, then `pnpm db:migrate`.
 2. **Contract:** add the Zod schemas in `packages/schemas/src/<feature>.ts` and export them from
-   `index.ts`.
+   `index.ts`. Limits like a maximum length belong on the input schemas, not the one describing
+   responses, so tightening a rule later can't make stored data invalid.
 3. **Module:** add `apps/api/src/modules/<feature>/`, with the files described in
-   [Project structure](#project-structure).
+   [Project structure](#project-structure). Its responses are checked automatically.
 4. **Mount:** add the router to the `.route(...)` chain in `apps/api/src/app.ts`.
 5. **Tests:** add `<feature>.test.ts` next to the module, using the helpers in
    `apps/api/test/helpers.ts`.
 6. **Demo data:** if people should see the feature right after setup, add it to
    `apps/api/src/seed/seed.ts`.
-7. **UI:** add query options and hooks in `apps/ui/src/queries/<feature>.ts`, then add screens under
+7. **UI:** add query options and hooks in `apps/ui/src/queries/<feature>.ts`, using
+   `parseResponseWith` for anything that returns data, then add screens under
    `apps/ui/src/routes/`. Forms can validate with the same Zod schemas as the API, as
    `routes/_authenticated/-components/new-todo-form.tsx` does. Put components unique to one screen in
    a `-components/` folder next to it.
