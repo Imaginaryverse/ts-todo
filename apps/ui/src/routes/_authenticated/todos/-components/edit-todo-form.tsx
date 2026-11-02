@@ -43,7 +43,7 @@ export function EditTodoForm({ todo }: { todo: Todo }) {
 				void form.handleSubmit();
 			}}
 		>
-			<Flex direction="column" gap="3">
+			<Flex direction="column" gap="3" maxWidth="480px">
 				<form.Field name="title">
 					{(field) => (
 						<Text as="label" size="2" weight="medium">

@@ -37,7 +37,7 @@ export function NewTodoForm({ onCreate, errorMessage }: NewTodoFormProps) {
 				void form.handleSubmit();
 			}}
 		>
-			<Flex direction="column" gap="3">
+			<Flex direction="column" gap="3" maxWidth="480px">
 				<form.Field name="title">
 					{(field) => (
 						<Text as="label" size="2" weight="medium">
@@ -72,7 +72,7 @@ export function NewTodoForm({ onCreate, errorMessage }: NewTodoFormProps) {
 				<form.Subscribe selector={(state) => state.isSubmitting}>
 					{(isSubmitting) => (
 						<Button type="submit" loading={isSubmitting}>
-							Add todo
+							Add
 						</Button>
 					)}
 				</form.Subscribe>

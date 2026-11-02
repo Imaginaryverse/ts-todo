@@ -32,7 +32,9 @@ export function UserMenu() {
 					{signOut.error.message}
 				</Text>
 			)}
+
 			<Text size="2">{session.user.name}</Text>
+
 			<Button
 				size="1"
 				variant="soft"

@@ -33,7 +33,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string | undefined }) {
 				void form.handleSubmit();
 			}}
 		>
-			<Flex direction="column" gap="3">
+			<Flex direction="column" gap="3" maxWidth="480px">
 				<form.Field name="email">
 					{(field) => (
 						<Text as="label" size="2" weight="medium">

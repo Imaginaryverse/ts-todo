@@ -1,4 +1,4 @@
-import { Checkbox, Flex, Link as RadixLink, Text } from "@radix-ui/themes";
+import { Card, Checkbox, Flex, Link as RadixLink, Text } from "@radix-ui/themes";
 import { Link } from "@tanstack/react-router";
 import type { Todo } from "@ts-todo/schemas";
 
@@ -10,31 +10,35 @@ export function TodoRow({ todo }: { todo: Todo }) {
 	const completed = todo.completedAt !== null;
 
 	return (
-		<Flex asChild gap="2" align="start">
+		<Flex asChild gap="2" align="start" maxWidth={{ initial: "480px", md: "unset" }}>
 			<li>
-				<Checkbox
-					mt="1"
-					aria-label={`${completed ? "Reopen" : "Complete"} ${todo.title}`}
-					checked={completed}
-					disabled={patchTodo.isPending}
-					onCheckedChange={(checked) =>
-						patchTodo.mutate({ id: todo.id, json: { completed: checked === true } })
-					}
-				/>
-				<Flex direction="column" gap="1">
-					<Text style={{ overflowWrap: "anywhere" }}>
-						<RadixLink asChild color={completed ? "gray" : undefined}>
-							<Link to="/todos/$todoId" params={{ todoId: todo.id }}>
-								{todo.title}
-							</Link>
-						</RadixLink>
-					</Text>
-					{patchTodo.error && (
-						<Text role="alert" size="1" color="red">
-							{getErrorMessage(patchTodo.error)}
-						</Text>
-					)}
-				</Flex>
+				<Card style={{ width: "100%" }}>
+					<Flex gap="4">
+						<Checkbox
+							mt="1"
+							aria-label={`${completed ? "Reopen" : "Complete"} ${todo.title}`}
+							checked={completed}
+							disabled={patchTodo.isPending}
+							onCheckedChange={(checked) =>
+								patchTodo.mutate({ id: todo.id, json: { completed: checked === true } })
+							}
+						/>
+						<Flex direction="column" gap="1">
+							<Text style={{ overflowWrap: "anywhere" }}>
+								<RadixLink asChild color={completed ? "gray" : undefined}>
+									<Link to="/todos/$todoId" params={{ todoId: todo.id }}>
+										{todo.title}
+									</Link>
+								</RadixLink>
+							</Text>
+							{patchTodo.error && (
+								<Text role="alert" size="1" color="red">
+									{getErrorMessage(patchTodo.error)}
+								</Text>
+							)}
+						</Flex>
+					</Flex>
+				</Card>
 			</li>
 		</Flex>
 	);

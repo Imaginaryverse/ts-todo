@@ -1,19 +1,17 @@
-import { SegmentedControl } from "@radix-ui/themes";
+import { Select } from "@radix-ui/themes";
 import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
 	const { theme, setTheme } = useTheme();
 
 	return (
-		<SegmentedControl.Root
-			size="1"
-			aria-label="Color theme"
-			value={theme ?? "system"}
-			onValueChange={setTheme}
-		>
-			<SegmentedControl.Item value="light">Light</SegmentedControl.Item>
-			<SegmentedControl.Item value="system">System</SegmentedControl.Item>
-			<SegmentedControl.Item value="dark">Dark</SegmentedControl.Item>
-		</SegmentedControl.Root>
+		<Select.Root size="1" defaultValue="system" value={theme ?? "system"} onValueChange={setTheme}>
+			<Select.Trigger />
+			<Select.Content position="popper">
+				<Select.Item value="light">Light</Select.Item>
+				<Select.Item value="system">System</Select.Item>
+				<Select.Item value="dark">Dark</Select.Item>
+			</Select.Content>
+		</Select.Root>
 	);
 }
