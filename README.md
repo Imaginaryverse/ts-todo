@@ -35,6 +35,7 @@ Then install pnpm and the project's dependencies:
 ```sh
 npm install --global pnpm
 pnpm install
+pnpm --filter @ts-todo/e2e exec playwright install chromium   # the browser the UI's tests run in
 ```
 
 You'll also need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another Docker runtime) to run the database.
@@ -70,9 +71,6 @@ Other useful commands, all run from the repo root:
 | `pnpm db:generate` | Create a migration after changing the Drizzle schema                  |
 | `pnpm db:seed`     | Reset the demo users and their todos                                  |
 | `pnpm db:studio`   | Browse the database in Drizzle Studio                                 |
-
-`pnpm test` and `pnpm test:e2e` both run tests in a real browser, so install Chromium once with
-`pnpm --filter @ts-todo/e2e exec playwright install chromium`.
 
 ## Project structure
 
@@ -130,7 +128,7 @@ In `apps/ui/src/`:
 | `components/`      | UI used by more than one route, or by the app shell                               |
 | `routeTree.gen.ts` | Generated from `routes/` by the router plugin; don't edit it                      |
 | `env.ts`           | Validates environment variables when the app loads                                |
-| `lib/`             | The typed API client and the auth client                                          |
+| `lib/`             | The typed API client, the auth client, and small request helpers                  |
 | `queries/`         | TanStack Query hooks, one file per API feature                                    |
 
 Imports point in one direction: `routes` → `components` → `queries` → `lib`. A component that needs
@@ -165,8 +163,9 @@ that depends on it, with no build step in between. Four changes to try (undo eac
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
   `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before
   you run anything.
-- **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TITLE_MAX_LENGTH` to `10`. There's no type error this time, because it's a runtime rule. Instead, the new-todo
-  form and the API now both reject an 11-character title, with the same message.
+- **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TITLE_MAX_LENGTH` to
+  `10`. There's no type error this time, because it's a runtime rule. Instead, the new-todo form and
+  the API now both reject an 11-character title, with the same message.
 
 ## Adding a feature
 
