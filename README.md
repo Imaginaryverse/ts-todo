@@ -72,6 +72,9 @@ Other useful commands, all run from the repo root:
 | `pnpm db:seed`     | Reset the demo users and their todos                                  |
 | `pnpm db:studio`   | Browse the database in Drizzle Studio                                 |
 
+CI runs the same commands on every pull request: formatting, linting, type checks, a UI build, and
+both test suites.
+
 ## Project structure
 
 The repo is a pnpm workspace: `apps/` holds things you run, and `packages/` holds code they share.
