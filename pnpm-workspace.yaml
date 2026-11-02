@@ -20,3 +20,7 @@ packages:
 permissions:
   drizzle-kit:
     skills: false
+  "@tanstack/react-router":
+    skills: false
+  "@tanstack/router-plugin":
+    skills: false

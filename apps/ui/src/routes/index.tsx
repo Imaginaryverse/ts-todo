@@ -1,3 +1,4 @@
+import { Text } from "@radix-ui/themes";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 
@@ -14,5 +15,5 @@ function HomePage() {
 		return `API is ${data.status}`;
 	}, [isPending, isError, data]);
 
-	return <p>{healthStatus}</p>;
+	return <Text as="p">{healthStatus}</Text>;
 }
