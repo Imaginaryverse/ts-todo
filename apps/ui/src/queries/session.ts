@@ -1,6 +1,13 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	type QueryClient,
+	queryOptions,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 
 import { authClient } from "../lib/auth-client";
+import { healthKeys } from "./health";
 
 export const sessionKeys = {
 	all: ["session"] as const,
@@ -19,6 +26,29 @@ export const sessionQueryOptions = queryOptions({
 	},
 });
 
+// Everything else belongs to whoever is signed in, so it's dropped whenever that can change
+const SHARED_QUERY_KEYS: readonly unknown[] = [sessionKeys.all[0], healthKeys.all[0]];
+
+function removeUserQueries(queryClient: QueryClient) {
+	queryClient.removeQueries({
+		predicate: (query) => !SHARED_QUERY_KEYS.includes(query.queryKey[0]),
+	});
+}
+
+/**
+ * Marks the user as signed out and drops everything they could see. The session query stays, set to
+ * null, because `queryClient.clear()` would leave mounted components showing the old user.
+ */
+export function clearSession(queryClient: QueryClient) {
+	removeUserQueries(queryClient);
+	queryClient.setQueryData(sessionQueryOptions.queryKey, null);
+}
+
+function loadNewSession(queryClient: QueryClient) {
+	removeUserQueries(queryClient);
+	return queryClient.fetchQuery(sessionQueryOptions);
+}
+
 export function useGetSessionQuery() {
 	return useQuery(sessionQueryOptions);
 }
@@ -33,7 +63,7 @@ export function useSignInMutation() {
 				throw new Error(error.message ?? "Couldn't sign in");
 			}
 		},
-		onSuccess: () => queryClient.fetchQuery(sessionQueryOptions),
+		onSuccess: () => loadNewSession(queryClient),
 	});
 }
 
@@ -47,7 +77,7 @@ export function useSignUpMutation() {
 				throw new Error(error.message ?? "Couldn't sign up");
 			}
 		},
-		onSuccess: () => queryClient.fetchQuery(sessionQueryOptions),
+		onSuccess: () => loadNewSession(queryClient),
 	});
 }
 
@@ -61,13 +91,6 @@ export function useSignOutMutation() {
 				throw new Error(error.message ?? "Couldn't sign out");
 			}
 		},
-		onSuccess: () => {
-			// Drop everything the user could see. The session query stays, set to null, because
-			// `queryClient.clear()` would leave mounted components showing the old user.
-			queryClient.removeQueries({
-				predicate: (query) => query.queryKey[0] !== sessionKeys.all[0],
-			});
-			queryClient.setQueryData(sessionQueryOptions.queryKey, null);
-		},
+		onSuccess: () => clearSession(queryClient),
 	});
 }

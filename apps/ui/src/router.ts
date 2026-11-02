@@ -4,14 +4,14 @@ import { DetailedError } from "hono/client";
 
 import { ErrorMessage } from "./components/error-message";
 import { NotFound } from "./components/not-found";
-import { sessionQueryOptions } from "./queries/session";
+import { clearSession } from "./queries/session";
 import { routeTree } from "./routeTree.gen";
 
-// The session ended while the app was open: mark the user as signed out, and let the route guard
-// redirect them. This lives here because it needs both the query client and the router.
+// The session ended while the app was open: sign the user out, and let the route guard redirect
+// them. This lives here because it needs both the query client and the router.
 function handleError(error: Error) {
 	if (error instanceof DetailedError && error.statusCode === 401) {
-		queryClient.setQueryData(sessionQueryOptions.queryKey, null);
+		clearSession(queryClient);
 		void router.invalidate();
 	}
 }

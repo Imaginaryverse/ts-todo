@@ -1,6 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
-import { ALICE, BOB, signInAs, submitSignIn } from "./helpers";
+import { ALICE, API_URL, BOB, delayTodoList, signInAs, submitSignIn } from "./helpers";
+
+// The next user's list is held back, so the only todos that could be on screen are cached ones
+async function expectOnlyBobsTodos(page: Page) {
+	const alicesTodo = page.getByRole("link", { name: "Buy milk", exact: true });
+	await delayTodoList(page, 1500);
+
+	await submitSignIn(page, BOB.email);
+
+	await expect(page.getByText(BOB.name)).toBeVisible();
+	expect(await alicesTodo.count()).toBe(0);
+	await expect(page.getByRole("link", { name: "Water the plants", exact: true })).toBeVisible();
+	expect(await alicesTodo.count()).toBe(0);
+}
 
 test("creates a todo", async ({ page }) => {
 	const title = `Created ${Date.now()}`;
@@ -114,16 +127,38 @@ test("each user sees only their own todos", async ({ browser }) => {
 	await bobContext.close();
 });
 
-test("signing out and in as someone else doesn't show the previous user's todos", async ({
-	page,
-}) => {
-	await signInAs(page, ALICE);
-	await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
+test.describe("the next user never sees the previous user's todos", () => {
+	test("after signing out", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
 
+		await page.getByRole("button", { name: "Sign out" }).click();
+		await expect(page).toHaveURL(/\/sign-in/);
+
+		await expectOnlyBobsTodos(page);
+	});
+
+	test("after the session ends while the app is open", async ({ page, context }) => {
+		await signInAs(page, ALICE);
+		await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
+
+		await context.clearCookies();
+		await page.getByLabel("Title").fill(`Too late ${Date.now()}`);
+		await page.getByRole("button", { name: "Add todo" }).click();
+		await expect(page).toHaveURL(/\/sign-in/);
+
+		await expectOnlyBobsTodos(page);
+	});
+});
+
+test("the health status keeps working after signing out", async ({ page }) => {
+	await signInAs(page, ALICE);
 	await page.getByRole("button", { name: "Sign out" }).click();
 	await expect(page).toHaveURL(/\/sign-in/);
-	await submitSignIn(page, BOB.email);
+	await expect(page.getByText("API is OK")).toBeVisible();
 
-	await expect(page.getByRole("link", { name: "Water the plants", exact: true })).toBeVisible();
-	await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeHidden();
+	await page.route(`${API_URL}/health`, (route) => route.abort());
+	await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
+
+	await expect(page.getByText("API is unavailable")).toBeVisible({ timeout: 15_000 });
 });
