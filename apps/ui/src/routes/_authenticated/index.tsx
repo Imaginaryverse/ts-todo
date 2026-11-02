@@ -53,6 +53,10 @@ function TodoListPage() {
 			<Dialog.Root
 				open={isNewTodoOpen}
 				onOpenChange={(open) => {
+					// Its error only shows in here, and finishing would close a dialog reopened since
+					if (!open && postTodo.isPending) {
+						return;
+					}
 					setIsNewTodoOpen(open);
 					// Don't greet the next attempt with the last attempt's error
 					if (open) {

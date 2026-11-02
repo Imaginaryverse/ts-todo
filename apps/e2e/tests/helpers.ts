@@ -41,13 +41,18 @@ export async function failApiRoute(
 	page: Page,
 	path: string | RegExp,
 	method: string,
-	{ status = 500, message = "Something broke" }: { status?: number; message?: string } = {},
+	{
+		status = 500,
+		message = "Something broke",
+		until,
+	}: { status?: number; message?: string; until?: Promise<void> } = {},
 ) {
 	const url = typeof path === "string" ? `${API_URL}${path}` : path;
-	await page.route(url, (route) => {
+	await page.route(url, async (route) => {
 		if (route.request().method() !== method) {
 			return route.fallback();
 		}
+		await until;
 		return route.fulfill({
 			status,
 			contentType: "application/json",

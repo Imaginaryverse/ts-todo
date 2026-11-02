@@ -324,6 +324,34 @@ test.describe("when things go wrong", () => {
 		expect(requests).toBe(1);
 	});
 
+	test("keeps the new-todo dialog open while saving, so a failure can't go unseen", async ({
+		page,
+	}) => {
+		const { promise: responded, resolve: respond } = Promise.withResolvers<void>();
+		await signInAs(page, ALICE);
+		await failApiRoute(page, "/todos", "POST", {
+			status: 422,
+			message: "Title is taken",
+			until: responded,
+		});
+		await openNewTodoForm(page);
+		await page.getByLabel("Title").fill("A taken title");
+		const request = page.waitForRequest(
+			(req) => req.method() === "POST" && req.url() === `${API_URL}/todos`,
+		);
+		await page.getByRole("button", { name: "Add" }).click();
+		await request;
+		// As long as a person would take, so the page has rendered that it's saving
+		await page.waitForTimeout(100);
+
+		await page.keyboard.press("Escape");
+		// Long enough for a dialog that was closing to finish its animation and leave the page
+		await page.waitForTimeout(500);
+		respond();
+
+		await expect(page.getByRole("alert")).toHaveText("Title is taken");
+	});
+
 	test("shows the API's message and keeps what was typed when creating fails", async ({ page }) => {
 		await signInAs(page, ALICE);
 		await failApiRoute(page, "/todos", "POST", { status: 422, message: "Title is taken" });
