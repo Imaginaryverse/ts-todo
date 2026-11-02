@@ -46,7 +46,8 @@ export function clearSession(queryClient: QueryClient) {
 
 function loadNewSession(queryClient: QueryClient) {
 	removeUserQueries(queryClient);
-	return queryClient.fetchQuery(sessionQueryOptions);
+	// Always ask: the cached answer is from before this user signed in
+	return queryClient.fetchQuery({ ...sessionQueryOptions, staleTime: 0 });
 }
 
 export function useGetSessionQuery() {

@@ -53,7 +53,7 @@ export function EditTodoForm({ todo }: { todo: Todo }) {
 								onBlur={field.handleBlur}
 								onChange={(event) => field.handleChange(event.target.value)}
 							/>
-							{field.state.meta.isTouched && <FieldError errors={field.state.meta.errors} />}
+							<FieldError field={field} />
 						</Text>
 					)}
 				</form.Field>
@@ -67,7 +67,7 @@ export function EditTodoForm({ todo }: { todo: Todo }) {
 								onBlur={field.handleBlur}
 								onChange={(event) => field.handleChange(event.target.value)}
 							/>
-							{field.state.meta.isTouched && <FieldError errors={field.state.meta.errors} />}
+							<FieldError field={field} />
 						</Text>
 					)}
 				</form.Field>

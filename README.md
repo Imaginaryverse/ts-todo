@@ -165,8 +165,7 @@ that depends on it, with no build step in between. Four changes to try (undo eac
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
   `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before
   you run anything.
-- **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TodoTitle`'s `.max(100)`
-  to `.max(10)`. There's no type error this time, because it's a runtime rule. Instead, the new-todo
+- **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TITLE_MAX_LENGTH` to `10`. There's no type error this time, because it's a runtime rule. Instead, the new-todo
   form and the API now both reject an 11-character title, with the same message.
 
 ## Adding a feature

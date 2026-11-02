@@ -1,10 +1,13 @@
 import { Text } from "@radix-ui/themes";
+import { type AnyFieldApi, useStore } from "@tanstack/react-form";
 
-/** Shows the first validation error of a form field, if it has one. */
-export function FieldError({ errors }: { errors: readonly ({ message?: string } | undefined)[] }) {
-	const message = errors[0]?.message;
+/** Shows a form field's first validation error, once the user has left the field or submitted. */
+export function FieldError({ field }: { field: AnyFieldApi }) {
+	// Pressing Enter submits without leaving the field, so this needs to hear about submits itself
+	const hasSubmitted = useStore(field.form.store, (state) => state.submissionAttempts > 0);
+	const message = field.state.meta.errors[0]?.message;
 
-	if (!message) {
+	if (!message || !(field.state.meta.isBlurred || hasSubmitted)) {
 		return null;
 	}
 

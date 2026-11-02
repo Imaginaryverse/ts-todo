@@ -22,6 +22,8 @@ export const queryClient = new QueryClient({
 	mutationCache: new MutationCache({ onError: handleError }),
 	defaultOptions: {
 		queries: {
+			// Long enough that a route's loader and the component it renders share one request
+			staleTime: 30_000,
 			// Retrying won't change a 4xx, and it would delay the error by several seconds
 			retry: (failureCount, error) => {
 				const isClientError =

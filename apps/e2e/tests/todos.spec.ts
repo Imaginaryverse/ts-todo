@@ -319,6 +319,25 @@ test("the saved message goes away after further edits, and the title shows what 
 	await expect(page.getByRole("status")).toBeHidden();
 });
 
+test("opening a page doesn't fetch the same data twice", async ({ page }) => {
+	await signInAs(page, ALICE);
+	await page.goto("/sign-in");
+	await page.waitForURL("/");
+	await page.waitForLoadState("networkidle");
+
+	let requests = 0;
+	page.on("request", (request) => {
+		if (request.method() === "GET" && TODO_DETAIL_URL.test(request.url())) {
+			requests++;
+		}
+	});
+	await page.getByRole("link", { name: "Buy milk", exact: true }).click();
+	await page.getByLabel("Title").waitFor();
+	await page.waitForLoadState("networkidle");
+
+	expect(requests).toBe(1);
+});
+
 test("reopens a completed todo", async ({ page }) => {
 	const title = `Reopened ${Date.now()}`;
 	await signInAs(page, ALICE);
