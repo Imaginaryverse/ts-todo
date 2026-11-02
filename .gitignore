@@ -8,7 +8,7 @@ dist/
 .tanstack/
 test-results/
 playwright-report/
-__screenshots__/
+.vitest/
 
 # Environment variables
 .env*

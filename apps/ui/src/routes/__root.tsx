@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
+import { HealthStatus } from "../components/health-status";
 import { ThemeToggle } from "../components/theme-toggle";
 import { UserMenu } from "../components/user-menu";
 
@@ -30,6 +31,11 @@ function RootLayout() {
 			<main>
 				<Outlet />
 			</main>
+			<Flex asChild mt="6">
+				<footer>
+					<HealthStatus />
+				</footer>
+			</Flex>
 			<TanStackRouterDevtools />
 			<ReactQueryDevtools />
 		</Container>

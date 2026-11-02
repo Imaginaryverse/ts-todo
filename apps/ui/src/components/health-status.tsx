@@ -12,5 +12,9 @@ export function HealthStatus() {
 		return `API is ${data.status}`;
 	}, [isPending, isError, data]);
 
-	return <Text as="p">{healthStatus}</Text>;
+	return (
+		<Text as="p" size="1" color="gray">
+			{healthStatus}
+		</Text>
+	);
 }

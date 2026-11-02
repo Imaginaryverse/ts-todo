@@ -16,8 +16,15 @@ if (!root) {
 
 createRoot(root).render(
 	<StrictMode>
-		{/* Despite its name, next-themes isn't tied to Next. Radix picks up the class it sets. */}
-		<ThemeProvider attribute="class" defaultTheme="system">
+		{/*
+			Despite its name, next-themes isn't tied to Next. Radix picks up the class it sets. Its inline
+			script only runs in server-rendered HTML, so mark it as data to stop React warning about it.
+		*/}
+		<ThemeProvider
+			attribute="class"
+			defaultTheme="system"
+			scriptProps={{ type: "application/json" }}
+		>
 			<Theme>
 				<QueryClientProvider client={queryClient}>
 					<RouterProvider router={router} />

@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as SignInIndexRouteImport } from './routes/sign-in/index'
 import { Route as SignUpIndexRouteImport } from './routes/sign-up/index'
+import { Route as AuthenticatedTodosTodoIdRouteImport } from './routes/_authenticated/todos/$todoId'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -33,16 +34,24 @@ const SignUpIndexRoute = SignUpIndexRouteImport.update({
   path: '/sign-up/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTodosTodoIdRoute =
+  AuthenticatedTodosTodoIdRouteImport.update({
+    id: '/todos/$todoId',
+    path: '/todos/$todoId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
+  '/todos/$todoId': typeof AuthenticatedTodosTodoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/sign-in': typeof SignInIndexRoute
   '/sign-up': typeof SignUpIndexRoute
+  '/todos/$todoId': typeof AuthenticatedTodosTodoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,18 +59,20 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
+  '/_authenticated/todos/$todoId': typeof AuthenticatedTodosTodoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in/' | '/sign-up/'
+  fullPaths: '/' | '/sign-in/' | '/sign-up/' | '/todos/$todoId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/sign-up'
+  to: '/' | '/sign-in' | '/sign-up' | '/todos/$todoId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/'
     | '/sign-in/'
     | '/sign-up/'
+    | '/_authenticated/todos/$todoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,15 +111,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/todos/$todoId': {
+      id: '/_authenticated/todos/$todoId'
+      path: '/todos/$todoId'
+      fullPath: '/todos/$todoId'
+      preLoaderRoute: typeof AuthenticatedTodosTodoIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedTodosTodoIdRoute: typeof AuthenticatedTodosTodoIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedTodosTodoIdRoute: AuthenticatedTodosTodoIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

@@ -55,7 +55,7 @@ describe("seed", () => {
 		expect(aliceTodos.some((todo) => todo.completedAt !== null)).toBe(true);
 		expect(aliceTodos.some((todo) => todo.completedAt === null)).toBe(true);
 		expect(aliceTodos.some((todo) => todo.description === null)).toBe(true);
-		expect(aliceTodos.some((todo) => todo.description?.includes("**"))).toBe(true);
+		expect(aliceTodos.some((todo) => todo.description?.includes("\n"))).toBe(true);
 		expect(aliceTodos.some((todo) => todo.title.length === 100)).toBe(true);
 	});
 

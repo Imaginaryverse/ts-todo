@@ -36,7 +36,7 @@ export const DEMO_USERS = [
 			{
 				title: "Prepare the team presentation",
 				description:
-					"Cover **why** we picked a monorepo:\n\n- One set of types\n- No build step between packages\n- Errors show up where the change breaks something",
+					"Cover why we picked a monorepo:\n\nOne set of types\nNo build step between packages\nErrors show up where the change breaks something",
 				createdDaysAgo: 1,
 			},
 			{

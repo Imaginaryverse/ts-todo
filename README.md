@@ -49,9 +49,9 @@ pnpm db:seed                      # add demo users and todos
 pnpm dev                          # start the API on http://localhost:3000 and the UI on http://localhost:5173
 ```
 
-Open <http://localhost:5173> to see the UI, which shows the API's status. In development, the button
-in the corner opens the React Query Devtools, where you can inspect every query and its state. You
-can also check the API with `curl http://localhost:3000/health`, or browse its docs at
+Open <http://localhost:5173> and sign in with one of the demo accounts below. In development, the
+buttons in the corners open the Router and React Query Devtools, where you can inspect every route
+and query. You can also check the API with `curl http://localhost:3000/health`, or browse its docs at
 <http://localhost:3000/scalar>.
 
 The seed creates two demo users with their own todos: `alice@example.com` and `bob@example.com`,
@@ -71,7 +71,7 @@ Other useful commands, all run from the repo root:
 | `pnpm db:seed`     | Reset the demo users and their todos                                  |
 | `pnpm db:studio`   | Browse the database in Drizzle Studio                                 |
 
-Playwright tests need Chromium, which you install once with
+`pnpm test` and `pnpm test:e2e` both run tests in a real browser, so install Chromium once with
 `pnpm --filter @ts-todo/e2e exec playwright install chromium`.
 
 ## Project structure
@@ -151,7 +151,7 @@ a package's own script doesn't start Postgres, so run `pnpm services:up` before 
 ## Seeing the types at work
 
 Packages share types straight from source, so a change in one package is a type error in the code
-that depends on it, with no build step in between. Three changes to try (undo each one afterwards):
+that depends on it, with no build step in between. Four changes to try (undo each one afterwards):
 
 - **Rename a database column's property.** In `packages/db/src/schema/todos.ts`, change
   `description: text("description")` to `details: text("description")`, then run `pnpm tc`.
@@ -163,11 +163,15 @@ that depends on it, with no build step in between. Three changes to try (undo ea
   does the test data in `packages/schemas`.
 - **Change a contract the UI uses.** In `packages/schemas/src/health.ts`, rename `status` to `state`,
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
-  `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before you run anything.
+  `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before
+  you run anything.
+- **Tighten a validation rule.** In `packages/schemas/src/todo.ts`, change `TodoTitle`'s `.max(100)`
+  to `.max(10)`. There's no type error this time, because it's a runtime rule. Instead, the new-todo
+  form and the API now both reject an 11-character title, with the same message.
 
 ## Adding a feature
 
-The `todos` feature is a complete example of the API steps:
+The `todos` feature is a complete example of each step:
 
 1. **Table:** add `packages/db/src/schema/<feature>.ts`, using the shared columns in `columns.ts`,
    and export it from `schema/index.ts`. Run `pnpm db:generate`, then `pnpm db:migrate`.
@@ -180,8 +184,12 @@ The `todos` feature is a complete example of the API steps:
    `apps/api/test/helpers.ts`.
 6. **Demo data:** if people should see the feature right after setup, add it to
    `apps/api/src/seed/seed.ts`.
-7. **UI:** add hooks in `apps/ui/src/queries/<feature>.ts`, following `queries/health.ts`. Requests
-   made through `api` from `lib/api-client.ts` are typed by the routes you just mounted.
+7. **UI:** add query options and hooks in `apps/ui/src/queries/<feature>.ts`, then add screens under
+   `apps/ui/src/routes/`. Forms can validate with the same Zod schemas as the API, as
+   `routes/_authenticated/-components/new-todo-form.tsx` does. Put components unique to one screen in
+   a `-components/` folder next to it.
+8. **UI tests:** cover the main flows in `apps/e2e/tests/`, and any component with real logic in a
+   `<name>.test.tsx` next to it.
 
 ## Auth
 
