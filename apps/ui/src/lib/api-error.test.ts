@@ -1,7 +1,7 @@
 import { DetailedError } from "hono/client";
 import { expect, test } from "vitest";
 
-import { getErrorMessage } from "./api-error";
+import { getErrorMessage, InvalidResponseError } from "./api-error";
 
 function apiFailure(data: unknown) {
 	return new DetailedError("422 Unprocessable Entity", { statusCode: 422, detail: { data } });
@@ -31,4 +31,10 @@ test("falls back to the status when the body isn't in the API's format", () => {
 
 test("uses the message of any other error", () => {
 	expect(getErrorMessage(new TypeError("Failed to fetch"))).toBe("Failed to fetch");
+});
+
+test("explains a response that doesn't match its schema without showing the details", () => {
+	expect(getErrorMessage(new InvalidResponseError())).toBe(
+		"The server sent an unexpected response. Try reloading the page.",
+	);
 });

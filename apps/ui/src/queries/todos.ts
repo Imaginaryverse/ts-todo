@@ -1,8 +1,9 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PatchTodoInput, PostTodoInput } from "@ts-todo/schemas";
+import { type PatchTodoInput, type PostTodoInput, Todo } from "@ts-todo/schemas";
 import { parseResponse } from "hono/client";
 
 import { api } from "../lib/api-client";
+import { parseResponseWith } from "../lib/parse-response-with";
 
 export const todoKeys = {
 	all: ["todos"] as const,
@@ -12,13 +13,13 @@ export const todoKeys = {
 
 export const todoListQueryOptions = queryOptions({
 	queryKey: todoKeys.list(),
-	queryFn: () => parseResponse(api.todos.$get()),
+	queryFn: () => parseResponseWith(Todo.array(), api.todos.$get()),
 });
 
 export function todoDetailQueryOptions(id: string) {
 	return queryOptions({
 		queryKey: todoKeys.detail(id),
-		queryFn: () => parseResponse(api.todos[":id"].$get({ param: { id } })),
+		queryFn: () => parseResponseWith(Todo, api.todos[":id"].$get({ param: { id } })),
 	});
 }
 
@@ -34,7 +35,7 @@ export function usePostTodoMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (json: PostTodoInput) => parseResponse(api.todos.$post({ json })),
+		mutationFn: (json: PostTodoInput) => parseResponseWith(Todo, api.todos.$post({ json })),
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: todoKeys.list() }),
 	});
 }
@@ -44,7 +45,7 @@ export function usePatchTodoMutation() {
 
 	return useMutation({
 		mutationFn: ({ id, json }: { id: string; json: PatchTodoInput }) =>
-			parseResponse(api.todos[":id"].$patch({ param: { id }, json })),
+			parseResponseWith(Todo, api.todos[":id"].$patch({ param: { id }, json })),
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: todoKeys.all }),
 	});
 }

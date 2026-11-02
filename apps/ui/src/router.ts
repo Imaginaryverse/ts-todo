@@ -5,6 +5,7 @@ import { DetailedError } from "hono/client";
 import { ErrorMessage } from "./components/error-message";
 import { NotFound } from "./components/not-found";
 import { PendingMessage } from "./components/pending-message";
+import { InvalidResponseError } from "./lib/api-error";
 import { clearSession } from "./queries/session";
 import { routeTree } from "./routeTree.gen";
 
@@ -24,8 +25,12 @@ export const queryClient = new QueryClient({
 		queries: {
 			// Long enough that a route's loader and the component it renders share one request
 			staleTime: 30_000,
-			// Retrying won't change a 4xx, and it would delay the error by several seconds
+			// Retrying won't change a 4xx or a response with the wrong shape, and it would delay the
+			// error by several seconds
 			retry: (failureCount, error) => {
+				if (error instanceof InvalidResponseError) {
+					return false;
+				}
 				const isClientError =
 					error instanceof DetailedError &&
 					error.statusCode !== undefined &&

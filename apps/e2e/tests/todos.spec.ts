@@ -309,6 +309,21 @@ test.describe("when things go wrong", () => {
 		await expect(page.getByText(ALICE.name)).toBeVisible();
 	});
 
+	test("explains a response that doesn't match the contract, without retrying", async ({
+		page,
+	}) => {
+		let requests = 0;
+		await page.route(`${API_URL}/todos`, (route) => {
+			requests += 1;
+			return route.fulfill({ json: [{ id: "not-a-uuid" }] });
+		});
+
+		await signInAs(page, ALICE);
+
+		await expect(page.getByRole("alert")).toContainText("The server sent an unexpected response");
+		expect(requests).toBe(1);
+	});
+
 	test("shows the API's message and keeps what was typed when creating fails", async ({ page }) => {
 		await signInAs(page, ALICE);
 		await failApiRoute(page, "/todos", "POST", { status: 422, message: "Title is taken" });

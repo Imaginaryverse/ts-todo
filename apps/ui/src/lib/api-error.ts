@@ -12,3 +12,11 @@ export function getErrorMessage(error: unknown) {
 
 	return error instanceof Error ? error.message : "Unknown error";
 }
+
+/** The API responded successfully, but not with what its schema promises. */
+export class InvalidResponseError extends Error {
+	constructor() {
+		super("The server sent an unexpected response. Try reloading the page.");
+		this.name = "InvalidResponseError";
+	}
+}
