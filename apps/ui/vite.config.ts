@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
 	// The router plugin has to run before the React plugin
-	plugins: [tanstackRouter({ target: "react" }), react()],
+	plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react()],
 	// Use the repo root's .env, shared with the API. Only VITE_* variables reach the browser.
 	envDir: "../..",
 	server: {
