@@ -128,8 +128,8 @@ instead of passing database rows straight through. This keeps internal columns l
 responses and turns `Date`s into the ISO strings the shared schemas expect.
 
 Hono doesn't check responses against their schemas, so `createRouter` adds `checkResponse` to every
-route. A response that doesn't match fails the request in development and tests, naming the field,
-and is logged in production.
+route defined with `.openapi`. A response that doesn't match fails the request in development and
+tests, naming the field, and is logged in production. Better Auth's own routes aren't included.
 
 In `apps/ui/src/`:
 
@@ -187,7 +187,8 @@ that depends on it, with no build step in between. Five changes to try (undo eac
   still load, because the limit only applies to input.
 - **Break a response at runtime.** In `toTodoDto` in `apps/api`, change `id: row.id` to
   `id: "not-a-uuid"`, then run `pnpm tc`. It passes, because to TypeScript a UUID is only a string.
-  Now run `pnpm test`: the API's tests fail with `Response doesn't match the 201 schema of POST /todos`.
+  Now run `pnpm test`: the API's tests fail, and the log says why:
+  `Response doesn't match the 201 schema of POST /todos: id: Invalid UUID`.
 
 ## Adding a feature
 
@@ -199,7 +200,8 @@ The `todos` feature is a complete example of each step:
    `index.ts`. Limits like a maximum length belong on the input schemas, not the one describing
    responses, so tightening a rule later can't make stored data invalid.
 3. **Module:** add `apps/api/src/modules/<feature>/`, with the files described in
-   [Project structure](#project-structure). Its responses are checked automatically.
+   [Project structure](#project-structure). Routes defined with `.openapi` get their
+   responses checked automatically.
 4. **Mount:** add the router to the `.route(...)` chain in `apps/api/src/app.ts`.
 5. **Tests:** add `<feature>.test.ts` next to the module, using the helpers in
    `apps/api/test/helpers.ts`.

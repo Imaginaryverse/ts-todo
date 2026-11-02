@@ -107,10 +107,10 @@ queryFn: () => parseResponseWith(Todo.array(), api.todos.$get()),
 Pair a schema with the wrong route and it won't even compile. This repo checks responses at both ends, and
 each check has its own job:
 
-| Check                                                            | What it does                                                                                            |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`checkResponse`](../apps/api/src/lib/check-response.ts)         | Runs on every API route. A bad response fails in development and tests, naming the route and field      |
-| [`parseResponseWith`](../apps/ui/src/lib/parse-response-with.ts) | Runs in the browser. If a live API and UI ever disagree, the user sees a clear error, not a broken page |
+| Check                                                            | What it does                                                                                                           |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [`checkResponse`](../apps/api/src/lib/check-response.ts)         | Runs on every route defined with `.openapi`. A bad response fails in development and tests, naming the route and field |
+| [`parseResponseWith`](../apps/ui/src/lib/parse-response-with.ts) | Runs in the browser. If a live API and UI ever disagree, the user sees a clear error, not a broken page                |
 
 You can watch the first one work in the
 [last experiment in the README](../README.md#seeing-the-types-at-work): the code passes the type check,
