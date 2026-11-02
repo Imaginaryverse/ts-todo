@@ -89,7 +89,11 @@ describe("checkResponse", () => {
 
 		expect(res.status).toBe(500);
 		expect(await res.json()).toMatchObject({
-			error: { reason: "INTERNAL_SERVER_ERROR", issues: [{ path: ["id"] }] },
+			error: {
+				reason: "INTERNAL_SERVER_ERROR",
+				message: expect.stringContaining("id: Invalid UUID"),
+				issues: [{ path: ["id"] }],
+			},
 		});
 	});
 
@@ -99,7 +103,7 @@ describe("checkResponse", () => {
 		const res = await app.request("/mounted/invalid");
 
 		expect(await res.json()).toMatchObject({
-			error: { message: "Response doesn't match the 200 schema of GET /mounted/invalid" },
+			error: { message: expect.stringContaining("the 200 schema of GET /mounted/invalid") },
 		});
 	});
 
@@ -112,6 +116,10 @@ describe("checkResponse", () => {
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ id: "not-a-uuid" });
 		expect(consoleError).toHaveBeenCalledOnce();
+		// In the message itself, because `console.error` cuts off deeply nested values
+		expect(consoleError).toHaveBeenCalledWith(
+			expect.objectContaining({ message: expect.stringContaining("id: Invalid UUID") }),
+		);
 	});
 
 	it("skips responses without a JSON schema", async () => {

@@ -34,9 +34,11 @@ export function checkResponse(route: RouteConfig) {
 		}
 
 		const issues = toApiErrorIssues(result.error);
-		const message = `Response doesn't match the ${c.res.status} schema of ${c.req.method} ${c.req.path}`;
+		// The fields go in the message because `console.error` cuts off deeply nested values
+		const fields = issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ");
+		const message = `Response doesn't match the ${c.res.status} schema of ${c.req.method} ${c.req.path}: ${fields}`;
 		if (env.NODE_ENV === "production") {
-			console.error({ requestId: c.get("requestId"), message, issues });
+			console.error({ requestId: c.get("requestId"), message });
 			return;
 		}
 		throw new AppError("INTERNAL_SERVER_ERROR", message, issues);
