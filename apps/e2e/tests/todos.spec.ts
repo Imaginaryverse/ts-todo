@@ -324,6 +324,28 @@ test.describe("when things go wrong", () => {
 		expect(requests).toBe(1);
 	});
 
+	test("refreshes the list when a todo saves but the response doesn't match the contract", async ({
+		page,
+	}) => {
+		const title = `Saved with a bad response ${Date.now()}`;
+		await signInAs(page, ALICE);
+		await page.route(`${API_URL}/todos`, async (route) => {
+			if (route.request().method() !== "POST") {
+				return route.fallback();
+			}
+			const response = await route.fetch();
+			return route.fulfill({ response, json: { id: "not-a-uuid" } });
+		});
+		await openNewTodoForm(page);
+		await page.getByLabel("Title").fill(title);
+		await page.getByRole("button", { name: "Add" }).click();
+
+		await expect(page.getByRole("alert")).toContainText("The server sent an unexpected response");
+		await page.keyboard.press("Escape");
+
+		await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
+	});
+
 	test("keeps the new-todo dialog open while saving, so a failure can't go unseen", async ({
 		page,
 	}) => {

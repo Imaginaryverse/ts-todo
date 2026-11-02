@@ -36,7 +36,8 @@ export function usePostTodoMutation() {
 
 	return useMutation({
 		mutationFn: (json: PostTodoInput) => parseResponseWith(Todo, api.todos.$post({ json })),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: todoKeys.list() }),
+		// Settled, not success: a response that fails validation may still have saved the todo
+		onSettled: () => queryClient.invalidateQueries({ queryKey: todoKeys.list() }),
 	});
 }
 
@@ -46,7 +47,8 @@ export function usePatchTodoMutation() {
 	return useMutation({
 		mutationFn: ({ id, json }: { id: string; json: PatchTodoInput }) =>
 			parseResponseWith(Todo, api.todos[":id"].$patch({ param: { id }, json })),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: todoKeys.all }),
+		// Settled, not success: a response that fails validation may still have saved the todo
+		onSettled: () => queryClient.invalidateQueries({ queryKey: todoKeys.all }),
 	});
 }
 
