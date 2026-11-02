@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-// Field rules shared by the response DTO and the input schemas
+// Rules for what clients may send. `Todo` deliberately doesn't use them: it describes what's already
+// stored, so tightening a rule can't make existing todos invalid.
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 10_000;
 
@@ -15,8 +16,8 @@ const TodoDescription = z
 
 export const Todo = z.object({
 	id: z.uuid(),
-	title: TodoTitle,
-	description: TodoDescription.nullable(),
+	title: z.string(),
+	description: z.string().nullable(),
 	completedAt: z.iso.datetime().nullable(),
 	createdAt: z.iso.datetime(),
 	updatedAt: z.iso.datetime(),

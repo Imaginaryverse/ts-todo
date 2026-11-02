@@ -18,6 +18,18 @@ describe("Todo", () => {
 		expect(result).toEqual(sample);
 	});
 
+	it("accepts stored text longer than the input limits, so tightening a rule can't hide old todos", () => {
+		const sample = { ...todo, title: "a".repeat(500), description: "b".repeat(20_000) };
+		const result = Todo.parse(sample);
+		expect(result).toEqual(sample);
+	});
+
+	it("doesn't trim a stored title; what's stored is what's returned", () => {
+		const sample = { ...todo, title: "  Buy milk  " };
+		const result = Todo.parse(sample);
+		expect(result).toEqual(sample);
+	});
+
 	it("requires nullable fields to be present, even when null", () => {
 		const { completedAt: _, ...sample } = todo;
 		const result = Todo.safeParse(sample);
