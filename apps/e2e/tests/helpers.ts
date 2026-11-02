@@ -21,6 +21,11 @@ export async function signInAs(page: Page, user: { name: string; email: string }
 	await page.getByText(user.name).waitFor();
 }
 
+/** Opens the new-todo dialog from the todo list page. */
+export async function openNewTodoForm(page: Page) {
+	await page.getByRole("button", { name: "New todo" }).click();
+}
+
 /** Holds back the list of todos, so a test can look at what's on screen while it's still loading. */
 export async function delayTodoList(page: Page, delayMs: number) {
 	await page.route(`${API_URL}/todos`, async (route) => {

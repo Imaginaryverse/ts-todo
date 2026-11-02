@@ -6,6 +6,7 @@ import {
 	BOB,
 	delayTodoList,
 	failApiRoute,
+	openNewTodoForm,
 	signInAs,
 	submitSignIn,
 } from "./helpers";
@@ -27,18 +28,23 @@ test("creates a todo", async ({ page }) => {
 	const title = `Created ${Date.now()}`;
 	await signInAs(page, ALICE);
 
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(`  ${title}  `);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 
+	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
+
+	await openNewTodoForm(page);
 	await expect(page.getByLabel("Title")).toHaveValue("");
 });
 
 test("completes a todo and moves it to the completed group", async ({ page }) => {
 	const title = `Completed ${Date.now()}`;
 	await signInAs(page, ALICE);
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(title);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 
 	await page.getByRole("checkbox", { name: `Complete ${title}` }).click();
 
@@ -49,9 +55,10 @@ test("completes a todo and moves it to the completed group", async ({ page }) =>
 test("edits a todo and clears its description", async ({ page }) => {
 	const title = `Edited ${Date.now()}`;
 	await signInAs(page, ALICE);
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(title);
 	await page.getByLabel("Description").fill("First line\nSecond line");
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 	await page.getByRole("link", { name: title, exact: true }).click();
 
 	await expect(page.getByLabel("Description")).toHaveValue("First line\nSecond line");
@@ -69,8 +76,9 @@ test("edits a todo and clears its description", async ({ page }) => {
 test("deletes a todo after confirming", async ({ page }) => {
 	const title = `Deleted ${Date.now()}`;
 	await signInAs(page, ALICE);
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(title);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 	await page.getByRole("link", { name: title, exact: true }).click();
 
 	await page.getByRole("button", { name: "Delete" }).click();
@@ -111,10 +119,34 @@ test("redirects to sign-in when the session ends while the app is open", async (
 
 	// No reload: the cached session still says signed in, so only the API's 401 can reveal this
 	await context.clearCookies();
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(`Too late ${Date.now()}`);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 
 	await expect(page).toHaveURL(/\/sign-in/);
+});
+
+test("keeps the header and footer at the edges of the window, whatever the page's length", async ({
+	page,
+}) => {
+	await signInAs(page, ALICE);
+	const header = page.getByRole("banner");
+	// The router's devtools render a footer of their own
+	const footer = page.getByRole("contentinfo").filter({ hasText: "API is" });
+
+	async function expectAtEdges(windowHeight: number) {
+		const headerBox = await header.boundingBox();
+		const footerBox = await footer.boundingBox();
+		expect(headerBox?.y).toBe(0);
+		expect((footerBox?.y ?? 0) + (footerBox?.height ?? 0)).toBe(windowHeight);
+	}
+
+	await page.setViewportSize({ width: 1280, height: 2000 });
+	await expectAtEdges(2000);
+
+	await page.setViewportSize({ width: 1280, height: 400 });
+	await page.evaluate(() => window.scrollTo(0, 100));
+	await expectAtEdges(400);
 });
 
 test("each user sees only their own todos", async ({ browser }) => {
@@ -151,8 +183,9 @@ test.describe("the next user never sees the previous user's todos", () => {
 		await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
 
 		await context.clearCookies();
+		await openNewTodoForm(page);
 		await page.getByLabel("Title").fill(`Too late ${Date.now()}`);
-		await page.getByRole("button", { name: "Add todo" }).click();
+		await page.getByRole("button", { name: "Add" }).click();
 		await expect(page).toHaveURL(/\/sign-in/);
 
 		await expectOnlyBobsTodos(page);
@@ -227,8 +260,9 @@ test.describe("when things go wrong", () => {
 	test("shows not found when a todo is deleted elsewhere", async ({ page }) => {
 		const title = `Deleted elsewhere ${Date.now()}`;
 		await signInAs(page, ALICE);
+		await openNewTodoForm(page);
 		await page.getByLabel("Title").fill(title);
-		await page.getByRole("button", { name: "Add todo" }).click();
+		await page.getByRole("button", { name: "Add" }).click();
 		await page.getByRole("link", { name: title, exact: true }).click();
 		await page.getByLabel("Description").waitFor();
 		await page.waitForLoadState("networkidle");
@@ -242,8 +276,9 @@ test.describe("when things go wrong", () => {
 	test("says so when completing a todo fails", async ({ page }) => {
 		const title = `Won't complete ${Date.now()}`;
 		await signInAs(page, ALICE);
+		await openNewTodoForm(page);
 		await page.getByLabel("Title").fill(title);
-		await page.getByRole("button", { name: "Add todo" }).click();
+		await page.getByRole("button", { name: "Add" }).click();
 		const checkbox = page.getByRole("checkbox", { name: `Complete ${title}` });
 		await checkbox.waitFor();
 
@@ -278,11 +313,16 @@ test.describe("when things go wrong", () => {
 		await signInAs(page, ALICE);
 		await failApiRoute(page, "/todos", "POST", { status: 422, message: "Title is taken" });
 
+		await openNewTodoForm(page);
 		await page.getByLabel("Title").fill("A taken title");
-		await page.getByRole("button", { name: "Add todo" }).click();
+		await page.getByRole("button", { name: "Add" }).click();
 
 		await expect(page.getByRole("alert")).toHaveText("Title is taken");
 		await expect(page.getByLabel("Title")).toHaveValue("A taken title");
+
+		await page.keyboard.press("Escape");
+		await openNewTodoForm(page);
+		await expect(page.getByRole("alert")).toBeHidden();
 	});
 });
 
@@ -305,8 +345,9 @@ test("the saved message goes away after further edits, and the title shows what 
 }) => {
 	const title = `Saved ${Date.now()}`;
 	await signInAs(page, ALICE);
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(title);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 	await page.getByRole("link", { name: title, exact: true }).click();
 
 	await page.getByLabel("Title").fill(`  ${title}  `);
@@ -341,8 +382,9 @@ test("opening a page doesn't fetch the same data twice", async ({ page }) => {
 test("reopens a completed todo", async ({ page }) => {
 	const title = `Reopened ${Date.now()}`;
 	await signInAs(page, ALICE);
+	await openNewTodoForm(page);
 	await page.getByLabel("Title").fill(title);
-	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("button", { name: "Add" }).click();
 	await page.getByRole("checkbox", { name: `Complete ${title}` }).click();
 
 	await page.getByRole("checkbox", { name: `Reopen ${title}` }).click();

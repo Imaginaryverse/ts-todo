@@ -1,6 +1,7 @@
 import { Button, Dialog, Flex, Grid, Heading, Text } from "@radix-ui/themes";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Todo } from "@ts-todo/schemas";
+import { useState } from "react";
 
 import { PendingMessage } from "../../components/pending-message";
 import { getErrorMessage } from "../../lib/api-error";
@@ -45,10 +46,20 @@ function TodoGroup({ title, todos }: { title: string; todos: Todo[] }) {
 function TodoListPage() {
 	const { data: todos, isPending, isError } = useGetTodoListQuery();
 	const postTodo = usePostTodoMutation();
+	const [isNewTodoOpen, setIsNewTodoOpen] = useState(false);
 
 	return (
 		<Flex direction="column" gap="5">
-			<Dialog.Root>
+			<Dialog.Root
+				open={isNewTodoOpen}
+				onOpenChange={(open) => {
+					setIsNewTodoOpen(open);
+					// Don't greet the next attempt with the last attempt's error
+					if (open) {
+						postTodo.reset();
+					}
+				}}
+			>
 				<Dialog.Trigger>
 					<Button size="1" style={{ width: "fit-content" }}>
 						New todo
@@ -60,7 +71,10 @@ function TodoListPage() {
 					<NewTodoForm
 						onCreate={(input) =>
 							postTodo.mutateAsync(input).then(
-								() => true,
+								() => {
+									setIsNewTodoOpen(false);
+									return true;
+								},
 								() => false,
 							)
 						}

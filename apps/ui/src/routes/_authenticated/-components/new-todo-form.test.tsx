@@ -16,7 +16,7 @@ test("doesn't submit a title with only spaces", async () => {
 	const screen = await rendered;
 
 	await screen.getByLabelText("Title").fill("   ");
-	await screen.getByRole("button", { name: "Add todo" }).click();
+	await screen.getByRole("button", { name: "Add" }).click();
 
 	await expect.element(screen.getByRole("alert")).toHaveTextContent("Enter a title");
 	expect(onCreate).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ test("submits the shared schema's parsed output and clears the form", async () =
 	const screen = await rendered;
 
 	await screen.getByLabelText("Title").fill("  Buy milk  ");
-	await screen.getByRole("button", { name: "Add todo" }).click();
+	await screen.getByRole("button", { name: "Add" }).click();
 
 	await expect.poll(() => onCreate.mock.calls.length).toBe(1);
 	expect(onCreate).toHaveBeenCalledWith({ title: "Buy milk" });
@@ -76,7 +76,7 @@ test("keeps what the user typed when creating fails", async () => {
 	const screen = await rendered;
 
 	await screen.getByLabelText("Title").fill("Buy milk");
-	await screen.getByRole("button", { name: "Add todo" }).click();
+	await screen.getByRole("button", { name: "Add" }).click();
 
 	await expect.poll(() => onCreate.mock.calls.length).toBe(1);
 	await expect.element(screen.getByLabelText("Title")).toHaveValue("Buy milk");
