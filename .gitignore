@@ -4,6 +4,12 @@ node_modules
 # Build output
 dist/
 
+# Tool output
+.tanstack/
+test-results/
+playwright-report/
+__screenshots__/
+
 # Environment variables
 .env*
 !.env.example

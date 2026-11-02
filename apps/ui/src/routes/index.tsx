@@ -1,8 +1,11 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 
-import { useGetHealthQuery } from "./queries/health";
+import { useGetHealthQuery } from "../queries/health";
 
-export default function App() {
+export const Route = createFileRoute("/")({ component: HomePage });
+
+function HomePage() {
 	const { data, isPending, isError } = useGetHealthQuery();
 
 	const healthStatus = useMemo(() => {
@@ -11,10 +14,5 @@ export default function App() {
 		return `API is ${data.status}`;
 	}, [isPending, isError, data]);
 
-	return (
-		<div>
-			<h1>TS Todo</h1>
-			{healthStatus}
-		</div>
-	);
+	return <p>{healthStatus}</p>;
 }

@@ -1,10 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import App from "./app";
 import { queryClient } from "./lib/query-client";
+import { router } from "./router";
 
 const root = document.getElementById("root");
 
@@ -15,8 +15,7 @@ if (!root) {
 createRoot(root).render(
 	<StrictMode>
 		<QueryClientProvider client={queryClient}>
-			<App />
-			<ReactQueryDevtools />
+			<RouterProvider router={router} />
 		</QueryClientProvider>
 	</StrictMode>,
 );

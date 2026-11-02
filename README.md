@@ -117,13 +117,19 @@ schemas expect.
 
 In `apps/ui/src/`:
 
-| Path       | Contents                                              |
-| ---------- | ----------------------------------------------------- |
-| `main.tsx` | Starts React and provides the query client to the app |
-| `app.tsx`  | The root component                                    |
-| `env.ts`   | Validates environment variables when the app loads    |
-| `lib/`     | The typed API client and the query client             |
-| `queries/` | TanStack Query hooks, one file per API feature        |
+| Path               | Contents                                                                          |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `main.tsx`         | Starts React and provides the query client to the app                             |
+| `router.ts`        | Creates the router and registers its types for typed links                        |
+| `routes/`          | One file or folder per screen; `-components/` holds components unique to a screen |
+| `components/`      | UI used by more than one route, or by the app shell                               |
+| `routeTree.gen.ts` | Generated from `routes/` by the router plugin; don't edit it                      |
+| `env.ts`           | Validates environment variables when the app loads                                |
+| `lib/`             | The typed API client and the query client                                         |
+| `queries/`         | TanStack Query hooks, one file per API feature                                    |
+
+Imports point in one direction: `routes` → `components` → `queries` → `lib`. A component that needs
+users and todos imports from both `queries/` files, with nothing to work around.
 
 The UI gets its API types from `import type { AppType } from "@ts-todo/api/app"` in
 `lib/api-client.ts`. There's no code generation, and because it's a type-only import, no server code
@@ -152,7 +158,7 @@ that depends on it, with no build step in between. Three changes to try (undo ea
   does the test data in `packages/schemas`.
 - **Change a contract the UI uses.** In `packages/schemas/src/health.ts`, rename `status` to `state`,
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
-  `apps/ui/src/app.tsx` no longer exists, so one change flags both sides before you run anything.
+  `apps/ui/src/routes/index.tsx` no longer exists, so one change flags both sides before you run anything.
 
 ## Adding a feature
 
