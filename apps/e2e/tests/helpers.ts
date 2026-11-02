@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { API_URL } from "../src/urls";
+import { API_URL, UI_URL } from "../src/urls";
 
 export { API_URL };
 
@@ -28,5 +28,29 @@ export async function delayTodoList(page: Page, delayMs: number) {
 			await new Promise((resolve) => setTimeout(resolve, delayMs));
 		}
 		await route.continue();
+	});
+}
+
+/** Makes one API route fail, in the API's own error format, until the test removes the route. */
+export async function failApiRoute(
+	page: Page,
+	path: string | RegExp,
+	method: string,
+	{ status = 500, message = "Something broke" }: { status?: number; message?: string } = {},
+) {
+	const url = typeof path === "string" ? `${API_URL}${path}` : path;
+	await page.route(url, (route) => {
+		if (route.request().method() !== method) {
+			return route.fallback();
+		}
+		return route.fulfill({
+			status,
+			contentType: "application/json",
+			headers: {
+				"access-control-allow-origin": UI_URL,
+				"access-control-allow-credentials": "true",
+			},
+			body: JSON.stringify({ error: { reason: "INTERNAL_SERVER_ERROR", message } }),
+		});
 	});
 }

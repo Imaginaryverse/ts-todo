@@ -2,6 +2,8 @@ import { Flex, Heading, Text } from "@radix-ui/themes";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Todo } from "@ts-todo/schemas";
 
+import { PendingMessage } from "../../components/pending-message";
+import { getErrorMessage } from "../../lib/api-error";
 import {
 	todoListQueryOptions,
 	useGetTodoListQuery,
@@ -53,10 +55,12 @@ function TodoListPage() {
 						() => false,
 					)
 				}
-				errorMessage={postTodo.error?.message}
+				errorMessage={postTodo.error ? getErrorMessage(postTodo.error) : undefined}
 			/>
-			{isPending && <Text>Loading...</Text>}
-			{isError && <Text role="alert">Your todos couldn't be loaded.</Text>}
+			{isPending && <PendingMessage />}
+			{isError && (
+				<Text role="alert">Your todos couldn't be refreshed, so this list may be out of date.</Text>
+			)}
 			{todos && (
 				<>
 					<TodoGroup title="Active" todos={todos.filter((todo) => todo.completedAt === null)} />

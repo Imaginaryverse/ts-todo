@@ -4,6 +4,7 @@ import { DetailedError } from "hono/client";
 
 import { ErrorMessage } from "./components/error-message";
 import { NotFound } from "./components/not-found";
+import { PendingMessage } from "./components/pending-message";
 import { clearSession } from "./queries/session";
 import { routeTree } from "./routeTree.gen";
 
@@ -38,6 +39,8 @@ export const router = createRouter({
 	context: { queryClient },
 	defaultNotFoundComponent: NotFound,
 	defaultErrorComponent: ErrorMessage,
+	defaultPendingComponent: PendingMessage,
+	defaultPendingMs: 200,
 });
 
 // Gives every Link, navigate and useParams call the app's route types

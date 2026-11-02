@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { PatchTodoInput, PostTodoInput, type Todo } from "@ts-todo/schemas";
 
 import { FieldError } from "../../../../components/field-error";
+import { getErrorMessage } from "../../../../lib/api-error";
 import { usePatchTodoMutation } from "../../../../queries/todos";
 
 // The API's rules, for a form whose fields always hold a string. Patching allows leaving fields out,
@@ -15,14 +16,23 @@ export function EditTodoForm({ todo }: { todo: Todo }) {
 	const form = useForm({
 		defaultValues: { title: todo.title, description: todo.description ?? "" },
 		validators: { onChange: EditTodoFormValues },
-		onSubmit: ({ value }) => {
+		// "Saved" only describes what's on screen until the next edit
+		listeners: { onChange: () => patchTodo.reset() },
+		onSubmit: ({ value, formApi }) => {
 			// Validators don't apply transforms like `.trim()`, so parse to get the values to send.
 			// An empty description is cleared, which the API expresses as null.
 			const json = PatchTodoInput.parse({
 				title: value.title,
 				description: value.description === "" ? null : value.description,
 			});
-			patchTodo.mutate({ id: todo.id, json });
+			patchTodo.mutate(
+				{ id: todo.id, json },
+				{
+					// Show what was saved, which can differ from what was typed
+					onSuccess: (saved) =>
+						formApi.reset({ title: saved.title, description: saved.description ?? "" }),
+				},
+			);
 		},
 	});
 
@@ -63,7 +73,7 @@ export function EditTodoForm({ todo }: { todo: Todo }) {
 				</form.Field>
 				{patchTodo.error && (
 					<Text role="alert" size="2" color="red">
-						{patchTodo.error.message}
+						{getErrorMessage(patchTodo.error)}
 					</Text>
 				)}
 				{patchTodo.isSuccess && (

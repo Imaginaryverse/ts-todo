@@ -1,6 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { ALICE, API_URL, BOB, delayTodoList, signInAs, submitSignIn } from "./helpers";
+import {
+	ALICE,
+	API_URL,
+	BOB,
+	delayTodoList,
+	failApiRoute,
+	signInAs,
+	submitSignIn,
+} from "./helpers";
 
 // The next user's list is held back, so the only todos that could be on screen are cached ones
 async function expectOnlyBobsTodos(page: Page) {
@@ -161,4 +169,205 @@ test("the health status keeps working after signing out", async ({ page }) => {
 	await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
 
 	await expect(page.getByText("API is unavailable")).toBeVisible({ timeout: 15_000 });
+});
+
+const TODO_DETAIL_URL = new RegExp(`^${API_URL}/todos/[^/]+$`);
+
+test.describe("when things go wrong", () => {
+	test("shows the app and a loading message while the list loads", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await delayTodoList(page, 2000);
+
+		await page.goto("/");
+
+		await expect(page.getByRole("heading", { name: "TS Todo" })).toBeVisible();
+		await expect(page.getByText("Loading...")).toBeVisible();
+		await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
+	});
+
+	test("recovers with Try again after the list fails to load", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await failApiRoute(page, "/todos", "GET");
+
+		await page.goto("/");
+		await expect(page.getByText("Something went wrong")).toBeVisible({ timeout: 15_000 });
+		await expect(page.getByRole("heading", { name: "TS Todo" })).toBeVisible();
+
+		await page.unroute(`${API_URL}/todos`);
+		await page.getByRole("button", { name: "Try again" }).click();
+
+		await expect(page.getByRole("link", { name: "Buy milk", exact: true })).toBeVisible();
+	});
+
+	test("keeps unsaved edits when refreshing a todo fails", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await page.getByRole("link", { name: "Call the dentist", exact: true }).click();
+		const description = page.getByLabel("Description");
+		await description.waitFor();
+
+		let failures = 0;
+		await page.route(TODO_DETAIL_URL, (route) => {
+			if (route.request().method() !== "GET") {
+				return route.fallback();
+			}
+			failures++;
+			return route.abort();
+		});
+		await page.getByLabel("Title").fill("Call the dentist");
+		await page.getByRole("button", { name: "Save" }).click();
+		await description.fill("A draft worth keeping");
+
+		// The save invalidates the todo, and its refetch fails every retry
+		await expect.poll(() => failures, { timeout: 15_000 }).toBe(4);
+		await expect(page.getByRole("alert")).toContainText("may be out of date");
+
+		await expect(description).toHaveValue("A draft worth keeping");
+	});
+
+	test("shows not found when a todo is deleted elsewhere", async ({ page }) => {
+		const title = `Deleted elsewhere ${Date.now()}`;
+		await signInAs(page, ALICE);
+		await page.getByLabel("Title").fill(title);
+		await page.getByRole("button", { name: "Add todo" }).click();
+		await page.getByRole("link", { name: title, exact: true }).click();
+		await page.getByLabel("Description").waitFor();
+		await page.waitForLoadState("networkidle");
+
+		await failApiRoute(page, TODO_DETAIL_URL, "GET", { status: 404, message: "Not found" });
+		await page.getByRole("button", { name: "Save" }).click();
+
+		await expect(page.getByText("Page not found.")).toBeVisible();
+	});
+
+	test("says so when completing a todo fails", async ({ page }) => {
+		const title = `Won't complete ${Date.now()}`;
+		await signInAs(page, ALICE);
+		await page.getByLabel("Title").fill(title);
+		await page.getByRole("button", { name: "Add todo" }).click();
+		const checkbox = page.getByRole("checkbox", { name: `Complete ${title}` });
+		await checkbox.waitFor();
+
+		await failApiRoute(page, TODO_DETAIL_URL, "PATCH", { message: "Couldn't save that" });
+		await checkbox.click();
+
+		await expect(page.getByRole("alert")).toContainText("Couldn't save that");
+		await expect(checkbox).not.toBeChecked();
+	});
+
+	test("says so when signing out fails", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await page.route(`${API_URL}/auth/sign-out`, (route) =>
+			route.fulfill({
+				status: 500,
+				contentType: "application/json",
+				headers: {
+					"access-control-allow-origin": new URL(page.url()).origin,
+					"access-control-allow-credentials": "true",
+				},
+				body: JSON.stringify({ code: "FAILED", message: "Couldn't sign you out" }),
+			}),
+		);
+
+		await page.getByRole("button", { name: "Sign out" }).click();
+
+		await expect(page.getByRole("alert")).toContainText("Couldn't sign you out");
+		await expect(page.getByText(ALICE.name)).toBeVisible();
+	});
+
+	test("shows the API's message and keeps what was typed when creating fails", async ({ page }) => {
+		await signInAs(page, ALICE);
+		await failApiRoute(page, "/todos", "POST", { status: 422, message: "Title is taken" });
+
+		await page.getByLabel("Title").fill("A taken title");
+		await page.getByRole("button", { name: "Add todo" }).click();
+
+		await expect(page.getByRole("alert")).toHaveText("Title is taken");
+		await expect(page.getByLabel("Title")).toHaveValue("A taken title");
+	});
+});
+
+test("going back through history shows each todo's own values", async ({ page }) => {
+	await signInAs(page, ALICE);
+	await page.getByRole("link", { name: "Renew passport", exact: true }).click();
+	await expect(page.getByLabel("Title")).toHaveValue("Renew passport");
+	await page.getByRole("link", { name: "Back to your todos" }).click();
+	await page.getByRole("link", { name: "Fix the leaking kitchen tap", exact: true }).click();
+	await expect(page.getByLabel("Title")).toHaveValue("Fix the leaking kitchen tap");
+
+	await page.getByLabel("Title").fill("Typed for the other todo");
+	await page.evaluate(() => history.go(-2));
+
+	await expect(page.getByLabel("Title")).toHaveValue("Renew passport");
+});
+
+test("the saved message goes away after further edits, and the title shows what was saved", async ({
+	page,
+}) => {
+	const title = `Saved ${Date.now()}`;
+	await signInAs(page, ALICE);
+	await page.getByLabel("Title").fill(title);
+	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("link", { name: title, exact: true }).click();
+
+	await page.getByLabel("Title").fill(`  ${title}  `);
+	await page.getByRole("button", { name: "Save" }).click();
+
+	await expect(page.getByRole("status")).toHaveText("Saved");
+	await expect(page.getByLabel("Title")).toHaveValue(title);
+
+	await page.getByLabel("Description").fill("One more thing");
+	await expect(page.getByRole("status")).toBeHidden();
+});
+
+test("reopens a completed todo", async ({ page }) => {
+	const title = `Reopened ${Date.now()}`;
+	await signInAs(page, ALICE);
+	await page.getByLabel("Title").fill(title);
+	await page.getByRole("button", { name: "Add todo" }).click();
+	await page.getByRole("checkbox", { name: `Complete ${title}` }).click();
+
+	await page.getByRole("checkbox", { name: `Reopen ${title}` }).click();
+
+	const active = page.getByRole("region", { name: "Active" });
+	await expect(active.getByRole("link", { name: title, exact: true })).toBeVisible();
+});
+
+test("shows an empty state to a user with no todos", async ({ page }) => {
+	await page.goto("/sign-up");
+	await page.getByLabel("Name").fill("Empty User");
+	await page.getByLabel("Email").fill(`empty-${Date.now()}@example.com`);
+	await page.getByLabel("Password").fill("demo-password");
+	await page.getByRole("button", { name: "Sign up" }).click();
+
+	await expect(page.getByRole("region", { name: "Active" })).toContainText("Nothing here yet.");
+});
+
+test("another user's todo can't be opened by its URL", async ({ browser }) => {
+	const bobContext = await browser.newContext();
+	const bob = await bobContext.newPage();
+	await signInAs(bob, BOB);
+	await bob.getByRole("link", { name: "Water the plants", exact: true }).click();
+	await bob.getByLabel("Title").waitFor();
+	const bobsTodoUrl = bob.url();
+	await bobContext.close();
+
+	const aliceContext = await browser.newContext();
+	const alice = await aliceContext.newPage();
+	await signInAs(alice, ALICE);
+	await alice.goto(bobsTodoUrl);
+
+	await expect(alice.getByText("Page not found.")).toBeVisible();
+	await aliceContext.close();
+});
+
+test("redirects to sign-in when a page's data comes back unauthorized", async ({
+	page,
+	context,
+}) => {
+	await signInAs(page, ALICE);
+	await context.clearCookies();
+
+	await page.getByRole("link", { name: "Buy milk", exact: true }).click();
+
+	await expect(page).toHaveURL(/\/sign-in\?redirect=/);
 });

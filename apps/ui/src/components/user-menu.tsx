@@ -27,6 +27,11 @@ export function UserMenu() {
 
 	return (
 		<Flex gap="3" align="center">
+			{signOut.error && (
+				<Text role="alert" size="1" color="red">
+					{signOut.error.message}
+				</Text>
+			)}
 			<Text size="2">{session.user.name}</Text>
 			<Button
 				size="1"

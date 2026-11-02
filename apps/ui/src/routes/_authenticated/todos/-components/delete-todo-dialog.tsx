@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { Todo } from "@ts-todo/schemas";
 
+import { getErrorMessage } from "../../../../lib/api-error";
 import { todoKeys, useDeleteTodoMutation } from "../../../../queries/todos";
 
 export function DeleteTodoDialog({ todo }: { todo: Todo }) {
@@ -24,7 +25,7 @@ export function DeleteTodoDialog({ todo }: { todo: Todo }) {
 				</AlertDialog.Description>
 				{deleteTodo.error && (
 					<Text as="p" role="alert" size="2" color="red" mt="2">
-						{deleteTodo.error.message}
+						{getErrorMessage(deleteTodo.error)}
 					</Text>
 				)}
 				<Flex gap="3" mt="4" justify="end">

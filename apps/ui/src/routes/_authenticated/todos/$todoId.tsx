@@ -3,6 +3,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { TodoIdParams } from "@ts-todo/schemas";
 import { DetailedError } from "hono/client";
 
+import { NotFound } from "../../../components/not-found";
+import { PendingMessage } from "../../../components/pending-message";
 import { todoDetailQueryOptions, useGetTodoDetailQuery } from "../../../queries/todos";
 import { DeleteTodoDialog } from "./-components/delete-todo-dialog";
 import { EditTodoForm } from "./-components/edit-todo-form";
@@ -28,17 +30,24 @@ export const Route = createFileRoute("/_authenticated/todos/$todoId")({
 
 function TodoDetailPage() {
 	const { todoId } = Route.useParams();
-	const { data: todo, isPending, isError } = useGetTodoDetailQuery(todoId);
+	const { data: todo, isPending, error } = useGetTodoDetailQuery(todoId);
 
-	if (isPending) return <Text>Loading...</Text>;
-	if (isError) return <Text role="alert">This todo couldn't be loaded.</Text>;
+	if (isPending) return <PendingMessage />;
+	// Deleted elsewhere since it was loaded
+	if (error instanceof DetailedError && error.statusCode === 404) return <NotFound />;
+	if (!todo) return <Text role="alert">This todo couldn't be loaded.</Text>;
 
 	return (
 		<Flex direction="column" gap="4">
 			<RadixLink asChild size="2">
 				<Link to="/">Back to your todos</Link>
 			</RadixLink>
-			<EditTodoForm todo={todo} />
+			{/* A failed refresh keeps the form on screen, so no one loses what they've typed */}
+			{error && (
+				<Text role="alert">This todo couldn't be refreshed, so it may be out of date.</Text>
+			)}
+			{/* A new form per todo, so going through history can't save one todo's draft over another */}
+			<EditTodoForm key={todo.id} todo={todo} />
 			<Flex>
 				<DeleteTodoDialog todo={todo} />
 			</Flex>

@@ -1,13 +1,16 @@
 import { Button, Flex, Text } from "@radix-ui/themes";
-import type { ErrorComponentProps } from "@tanstack/react-router";
+import { type ErrorComponentProps, useRouter } from "@tanstack/react-router";
 
-export function ErrorMessage({ error, reset }: ErrorComponentProps) {
-	const message = error instanceof Error ? error.message : "Unknown error";
+import { getErrorMessage } from "../lib/api-error";
+
+export function ErrorMessage({ error }: ErrorComponentProps) {
+	const router = useRouter();
 
 	return (
 		<Flex direction="column" gap="2" align="start" role="alert">
-			<Text as="p">Something went wrong: {message}</Text>
-			<Button variant="soft" onClick={reset}>
+			<Text as="p">Something went wrong: {getErrorMessage(error)}</Text>
+			{/* Re-runs the route's loader, which resetting the error boundary alone wouldn't do */}
+			<Button variant="soft" onClick={() => void router.invalidate()}>
 				Try again
 			</Button>
 		</Flex>

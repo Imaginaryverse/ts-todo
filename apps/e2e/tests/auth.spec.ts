@@ -72,3 +72,46 @@ test("a visit without a session cookie goes to sign-in", async ({ page, context 
 
 	await expect(page).toHaveURL(/\/sign-in/);
 });
+
+test("sign-up returns to where the visitor came from", async ({ page }) => {
+	await page.goto("/sign-up?redirect=/some-page");
+
+	await page.getByLabel("Name").fill("Returning User");
+	await page.getByLabel("Email").fill(`returning-${Date.now()}@example.com`);
+	await page.getByLabel("Password").fill(DEMO_PASSWORD);
+	await page.getByRole("button", { name: "Sign up" }).click();
+
+	await expect(page).toHaveURL("/some-page");
+});
+
+test("a signed-in user can't open the sign-up page", async ({ page }) => {
+	await signInAs(page, ALICE);
+
+	await page.goto("/sign-up");
+
+	await expect(page).toHaveURL("/");
+});
+
+test("sign-up rejects a short password", async ({ page }) => {
+	await page.goto("/sign-up");
+
+	await page.getByLabel("Name").fill("Short Password");
+	await page.getByLabel("Email").fill(`short-${Date.now()}@example.com`);
+	await page.getByLabel("Password").fill("short");
+	await page.getByRole("button", { name: "Sign up" }).click();
+
+	await expect(page.getByRole("alert")).toHaveText("Use at least 8 characters");
+	await expect(page).toHaveURL(/\/sign-up/);
+});
+
+test("sign-up rejects an email that's already taken", async ({ page }) => {
+	await page.goto("/sign-up");
+
+	await page.getByLabel("Name").fill("Another Alice");
+	await page.getByLabel("Email").fill(ALICE.email);
+	await page.getByLabel("Password").fill(DEMO_PASSWORD);
+	await page.getByRole("button", { name: "Sign up" }).click();
+
+	await expect(page.getByRole("alert")).toBeVisible();
+	await expect(page).toHaveURL(/\/sign-up/);
+});
