@@ -60,15 +60,19 @@ leaves any other accounts alone, and it refuses to run against a database that i
 
 Other useful commands, all run from the repo root:
 
-| Command            | What it does                                         |
-| ------------------ | ---------------------------------------------------- |
-| `pnpm test`        | Run every test (starts Postgres if it isn't running) |
-| `pnpm tc`          | Type-check every package                             |
-| `pnpm lint`        | Lint with oxlint                                     |
-| `pnpm fmt:fix`     | Format with oxfmt                                    |
-| `pnpm db:generate` | Create a migration after changing the Drizzle schema |
-| `pnpm db:seed`     | Reset the demo users and their todos                 |
-| `pnpm db:studio`   | Browse the database in Drizzle Studio                |
+| Command            | What it does                                                          |
+| ------------------ | --------------------------------------------------------------------- |
+| `pnpm test`        | Run every test (starts Postgres if it isn't running)                  |
+| `pnpm test:e2e`    | Run the Playwright tests against the real API and a separate database |
+| `pnpm tc`          | Type-check every package                                              |
+| `pnpm lint`        | Lint with oxlint                                                      |
+| `pnpm fmt:fix`     | Format with oxfmt                                                     |
+| `pnpm db:generate` | Create a migration after changing the Drizzle schema                  |
+| `pnpm db:seed`     | Reset the demo users and their todos                                  |
+| `pnpm db:studio`   | Browse the database in Drizzle Studio                                 |
+
+Playwright tests need Chromium, which you install once with
+`pnpm --filter @ts-todo/e2e exec playwright install chromium`.
 
 ## Project structure
 
@@ -80,6 +84,7 @@ source, so a change in one is picked up everywhere without a build step.
 apps/
   api/          Hono API: routes, handlers, and the OpenAPI docs
   ui/           React frontend: calls the API through a typed client
+  e2e/          Playwright tests of the whole stack
 packages/
   db/           Drizzle schema, migrations, and the database client
   schemas/      Zod schemas shared by the API and the frontend (the API contract)
@@ -120,12 +125,12 @@ In `apps/ui/src/`:
 | Path               | Contents                                                                          |
 | ------------------ | --------------------------------------------------------------------------------- |
 | `main.tsx`         | Starts React and provides the query client to the app                             |
-| `router.ts`        | Creates the router and registers its types for typed links                        |
+| `router.ts`        | Creates the router and the query client, and handles expired sessions             |
 | `routes/`          | One file or folder per screen; `-components/` holds components unique to a screen |
 | `components/`      | UI used by more than one route, or by the app shell                               |
 | `routeTree.gen.ts` | Generated from `routes/` by the router plugin; don't edit it                      |
 | `env.ts`           | Validates environment variables when the app loads                                |
-| `lib/`             | The typed API client and the query client                                         |
+| `lib/`             | The typed API client and the auth client                                          |
 | `queries/`         | TanStack Query hooks, one file per API feature                                    |
 
 Imports point in one direction: `routes` → `components` → `queries` → `lib`. A component that needs
@@ -158,7 +163,7 @@ that depends on it, with no build step in between. Three changes to try (undo ea
   does the test data in `packages/schemas`.
 - **Change a contract the UI uses.** In `packages/schemas/src/health.ts`, rename `status` to `state`,
   then run `pnpm tc`. The API's health handler no longer matches the contract, and `data.status` in
-  `apps/ui/src/routes/index.tsx` no longer exists, so one change flags both sides before you run anything.
+  `apps/ui/src/components/health-status.tsx` no longer exists, so one change flags both sides before you run anything.
 
 ## Adding a feature
 
@@ -191,6 +196,8 @@ Things to know:
   can then read the signed-in user with `c.get("user")`, fully typed.
 - **Errors from `/auth/*` use Better Auth's format** (`{ code, message }`), not the `ApiError`
   shape the rest of the API uses. Better Auth's client handles its own format.
+- **The UI reads the session through React Query** (`queries/session.ts`), not Better Auth's own
+  `useSession` store. Routes under `routes/_authenticated/` require a session.
 - **Users are always created through Better Auth**, never with raw database inserts: passwords are
   hashed and stored on `accounts` in Better Auth's format. Tests use the helpers in
   `apps/api/test/helpers.ts`.

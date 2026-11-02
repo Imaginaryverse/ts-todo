@@ -6,8 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { queryClient } from "./lib/query-client";
-import { router } from "./router";
+import { queryClient, router } from "./router";
 
 const root = document.getElementById("root");
 

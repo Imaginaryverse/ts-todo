@@ -1,0 +1,19 @@
+{
+	"name": "@ts-todo/e2e",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"tc": "tsc",
+		"test": "tsx src/prepare-db.ts && playwright test"
+	},
+	"dependencies": {
+		"@ts-todo/db": "workspace:*",
+		"drizzle-orm": "catalog:"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.64.1",
+		"@types/node": "catalog:",
+		"tsx": "4.23.15"
+	}
+}

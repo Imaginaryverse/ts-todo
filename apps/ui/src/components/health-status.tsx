@@ -1,12 +1,9 @@
 import { Text } from "@radix-ui/themes";
-import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { useGetHealthQuery } from "../queries/health";
 
-export const Route = createFileRoute("/")({ component: HomePage });
-
-function HomePage() {
+export function HealthStatus() {
 	const { data, isPending, isError } = useGetHealthQuery();
 
 	const healthStatus = useMemo(() => {
